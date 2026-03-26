@@ -1,0 +1,14 @@
+# Binario descargado en local (no debe subirse al repo)
+picoclaw
+scripts/picoclaw
+
+# Logs
+*.log
+
+# Variables de entorno
+.env
+*.env
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

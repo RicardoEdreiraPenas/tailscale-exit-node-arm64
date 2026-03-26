@@ -1,0 +1,24 @@
+[Unit]
+Description=Servicio PicoClaw - Túnel Residencial
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Usuario dedicado sin privilegios (creado por install.sh)
+User=picoclaw
+Group=picoclaw
+# Ruta donde el script install.sh coloca el ejecutable
+ExecStart=/usr/local/bin/picoclaw
+Restart=on-failure
+RestartSec=10
+# Límite de memoria
+MemoryLimit=50M
+# Restricciones de seguridad
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
