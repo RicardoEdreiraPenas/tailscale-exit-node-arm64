@@ -34,8 +34,7 @@
                         ║  🔒 VPN Tailscale (WireGuard)
                         ▼
 ╔══════════════════════════════════════════════════════════╗
-║              🍓 RASPBERRY PI  (tu casa)                  ║
-║                                                          ║
+║              🍓 RASPBERRY PI  (tu casa)                  ║                                     ║
 ║   ├── 🔗 tailscaled    →  red mesh VPN                   ║
 ║   ├── 🚇 picoclaw      →  túnel residencial              ║
 ║   └── 🛡️ AdGuard Home  →  bloqueo de anuncios            ║
@@ -217,6 +216,6 @@ Al recuperarse la corriente, la Raspberry Pi arranca y los servicios se inician 
 
 <div align="center">
 
-Hecho con ❤️ para la comunidad · [GUIA_INSTALACION.md](GUIA_INSTALACION.md) · [Reportar un problema](https://github.com/RicardoEdreiraPenas/tailscale-exit-node-arm64/issues)
+Hecho con dedicación para la comunidad · [GUIA_INSTALACION.md](GUIA_INSTALACION.md) · [Reportar un problema](https://github.com/RicardoEdreiraPenas/tailscale-exit-node-arm64/issues)
 
 </div>
