@@ -121,7 +121,13 @@ tailscale-exit-node-arm64/
 
 ## Guía completa
 
-Para preparar la microSD desde cero en Windows o Mac consulta [GUIA_INSTALACION.md](GUIA_INSTALACION.md).
+Consulta [GUIA_INSTALACION.md](GUIA_INSTALACION.md) para instrucciones detalladas que incluyen:
+
+- Preparación de la microSD desde Windows o Mac
+- Instalación y verificación paso a paso
+- Configuración de funciones opcionales (AdGuard, alertas, auto-update)
+- **Cómo conectar cada dispositivo:** Windows, Mac, Fire TV Stick, Android TV y Smart TV Samsung/LG
+- Solución de problemas frecuentes
 
 ---
 

@@ -244,6 +244,100 @@ bash scripts/uninstall.sh
 
 ---
 
+## Parte 7 — Conectar tus dispositivos al Exit Node
+
+Una vez la Raspberry Pi está configurada, conecta tus dispositivos instalando Tailscale en cada uno y seleccionando tu placa como nodo de salida.
+
+---
+
+### Windows (PC)
+
+1. Descarga e instala Tailscale desde **https://tailscale.com/download/windows**
+2. Inicia sesión con la misma cuenta que usaste en la Raspberry Pi
+3. Haz clic en el icono de Tailscale en la barra de tareas (esquina inferior derecha)
+4. Ve a **Exit Node** > selecciona tu Raspberry Pi de la lista
+5. Listo. Todo el tráfico sale por tu IP doméstica.
+
+> Para verificar que funciona, abre **https://whatismyip.com** — debe mostrar la IP de tu casa.
+
+---
+
+### Mac
+
+1. Descarga e instala Tailscale desde la **App Store** (busca "Tailscale") o desde **https://tailscale.com/download/mac**
+2. Inicia sesión con tu cuenta de Tailscale
+3. Haz clic en el icono de Tailscale en la barra de menú (parte superior derecha)
+4. Ve a **Exit Node** > selecciona tu Raspberry Pi
+5. Listo.
+
+> Para verificar, abre **https://whatismyip.com** en Safari o Chrome.
+
+---
+
+### Fire TV Stick (Amazon)
+
+Tailscale tiene app oficial para Fire TV Stick.
+
+1. En tu Fire TV Stick, ve a la **tienda de aplicaciones**
+2. Busca **Tailscale** e instálala
+3. Abre Tailscale e inicia sesión con tu cuenta
+4. Una vez conectado, pulsa el botón de menú de la app
+5. Selecciona **Use exit node** > elige tu Raspberry Pi
+6. Listo. El streaming saldrá por tu IP doméstica.
+
+> Si no encuentras Tailscale en la tienda, activa **"Aplicaciones de fuentes desconocidas"** en Configuración > Mi Fire TV > Opciones para desarrolladores, y descárgala desde el navegador Silk.
+
+---
+
+### Android TV / Google TV
+
+1. En el Google Play Store de tu TV, busca **Tailscale** e instálala
+2. Inicia sesión con tu cuenta
+3. En la app, activa la conexión y selecciona tu Raspberry Pi como **Exit Node**
+4. Listo.
+
+> Compatible con: Chromecast con Google TV, NVIDIA Shield, televisores Sony, TCL, Hisense con Android TV, etc.
+
+---
+
+### Smart TV (sin Android TV — Samsung Tizen, LG webOS)
+
+Los Smart TV de Samsung y LG **no tienen tienda de apps compatible con Tailscale**. La solución es configurar la Raspberry Pi como **router de salida** para toda la red local o usar un router con Tailscale.
+
+**Opción recomendada — Configurar la Raspberry Pi como gateway:**
+
+En la Raspberry Pi, activa el enrutamiento para tu red local:
+
+```bash
+# Anuncia el rango de tu red local (ajusta según tu router, normalmente 192.168.1.0/24)
+sudo tailscale up --advertise-exit-node --advertise-routes=192.168.1.0/24
+```
+
+Luego en el panel de Tailscale aprueba también las rutas:
+1. Ve a **https://login.tailscale.com/admin/machines**
+2. Tu Raspberry Pi > `...` > **Edit route settings**
+3. Activa tanto **Use as exit node** como la ruta `192.168.1.0/24`
+
+Ahora en tu Smart TV (Samsung/LG):
+1. Ve a **Configuración de red** del TV
+2. Cambia la **puerta de enlace (gateway)** manualmente a la IP de tu Raspberry Pi
+3. El TV usará la Raspberry Pi como salida de red sin necesitar instalar nada.
+
+---
+
+### Solución de problemas frecuentes
+
+| Problema | Solución |
+|---|---|
+| `raspberrypi.local` no responde | Busca la IP en tu router o usa la app **Fing** en el móvil |
+| El exit node no aparece en la lista | Asegúrate de haberlo aprobado en **https://login.tailscale.com/admin/machines** |
+| La IP sigue siendo la del país remoto | Desconecta y vuelve a conectar el exit node en la app Tailscale |
+| Fire TV no encuentra Tailscale en la tienda | Activa "Fuentes desconocidas" y descarga el APK desde tailscale.com |
+| Smart TV Samsung/LG no puede instalar apps | Usa la opción de gateway manual explicada en la sección anterior |
+| PicoClaw no arranca | Ejecuta `sudo journalctl -u picoclaw.service -n 50` para ver el error |
+
+---
+
 ## Resiliencia: IP dinámica y cortes de luz
 
 - **IP dinámica:** Tailscale usa una red mesh basada en WireGuard. Si tu operador cambia tu IP pública, Tailscale renegocia la conexión automáticamente. No necesitas configurar puertos ni DDNS.
