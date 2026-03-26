@@ -101,3 +101,16 @@ tailscale-exit-node-arm64/
 ## Guía completa
 
 Para preparar la microSD desde cero en Windows o Mac consulta [GUIA_INSTALACION.md](GUIA_INSTALACION.md).
+
+---
+
+## Roadmap
+
+La arquitectura actual es totalmente funcional y estable, pero siempre hay espacio para evolucionar. Estas son las mejoras planificadas para futuras versiones:
+
+- [ ] **Bloqueo de publicidad (DNS):** Integración de AdGuard Home o Pi-hole junto con Tailscale (MagicDNS) para bloquear anuncios y rastreadores directamente en los dispositivos remotos.
+- [ ] **Monitorización de ancho de banda:** Incorporación de herramientas ligeras como `vnStat` para llevar un registro del tráfico consumido por los diferentes nodos conectados.
+- [ ] **Actualizaciones automáticas:** Creación de un script cron que revise el repositorio de PicoClaw y actualice el binario ARM64 de forma automática cuando haya una nueva versión disponible.
+- [ ] **Sistema de alertas:** Implementación de notificaciones (vía Telegram o email) para avisar si la placa pierde suministro eléctrico o si el servicio de red se reinicia.
+
+Las contribuciones (Pull Requests) con nuevas ideas son siempre bienvenidas.
