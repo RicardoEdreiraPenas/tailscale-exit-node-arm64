@@ -6,6 +6,8 @@
 
 *Navega desde cualquier lugar del mundo a través de tu IP residencial — automático, seguro y sin mantenimiento*
 
+<img width="2752" height="1536" alt="image" src="https://github.com/user-attachments/assets/6f0b06b6-763a-4f96-b389-aa7ec38db590" />
+
 ---
 
 [![Tailscale](https://img.shields.io/badge/Tailscale-WireGuard-blue?style=for-the-badge&logo=wireguard&logoColor=white)](https://tailscale.com)
