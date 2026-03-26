@@ -1,13 +1,15 @@
 # Tailscale Exit Node ARM64
 
-Convierte una **Raspberry Pi** o **Radxa ROCK 3C** en un nodo de salida VPN doméstico usando Tailscale + PicoClaw. Tus dispositivos remotos (TV Sticks, móviles, etc.) navegan a través de tu IP residencial de forma automática y sin mantenimiento.
+Convierte una **Raspberry Pi** o **Radxa ROCK 3C** en un nodo de salida VPN doméstico usando Tailscale + PicoClaw. Tus dispositivos remotos navegan a través de tu IP residencial de forma automática y sin mantenimiento.
+
+**Dispositivos compatibles:** Windows · Mac · Fire TV Stick · Android TV · Smart TV Samsung/LG
 
 ---
 
 ## Cómo funciona
 
 ```
-TV Stick / Dispositivo remoto
+ Windows / Mac / Fire TV Stick / Android TV / Smart TV
         │
         │  VPN Tailscale (WireGuard)
         ▼
@@ -57,6 +59,20 @@ Tras el paso 3, abre el enlace que aparece en la terminal y aprueba el nodo en e
 
 ---
 
+## Conectar tus dispositivos
+
+| Dispositivo | Método |
+|---|---|
+| **Windows** | Instala la app de Tailscale → menú bandeja → Exit Node → selecciona la Raspberry Pi |
+| **Mac** | Instala Tailscale (App Store) → barra de menú → Exit Node → selecciona la Raspberry Pi |
+| **Fire TV Stick** | Instala Tailscale desde la tienda Amazon → activar Exit Node en la app |
+| **Android TV / Google TV** | Instala Tailscale desde Google Play → activar Exit Node en la app |
+| **Smart TV Samsung / LG** | Sin app disponible — configurar la Raspberry Pi como gateway en los ajustes de red del TV |
+
+Instrucciones detalladas para cada dispositivo en [GUIA_INSTALACION.md](GUIA_INSTALACION.md).
+
+---
+
 ## Scripts
 
 ### Instalación y mantenimiento
@@ -99,7 +115,7 @@ tailscale-exit-node-arm64/
 │   ├── setup_adguard.sh      # Instalador de AdGuard Home
 │   ├── auto_update.sh        # Actualización automática con cron
 │   └── alertas.sh            # Alertas vía Telegram
-├── GUIA_INSTALACION.md       # Guía paso a paso desde cero (Windows/Mac)
+├── GUIA_INSTALACION.md       # Guía paso a paso desde cero
 └── README.md
 ```
 
@@ -115,19 +131,22 @@ tailscale-exit-node-arm64/
 ## Seguridad
 
 - El servicio `picoclaw` corre bajo un usuario dedicado sin shell ni privilegios (`NoNewPrivileges`, `ProtectSystem`, `PrivateTmp`).
-- El binario `picoclaw` no se incluye en el repositorio (excluido en `.gitignore`) y se descarga siempre desde la release oficial de GitHub.
+- El binario `picoclaw` no se incluye en el repositorio y se descarga siempre desde la release oficial de GitHub.
 
 ---
 
 ## Guía completa
 
-Consulta [GUIA_INSTALACION.md](GUIA_INSTALACION.md) para instrucciones detalladas que incluyen:
+[GUIA_INSTALACION.md](GUIA_INSTALACION.md) cubre todo desde cero:
 
-- Preparación de la microSD desde Windows o Mac
-- Instalación y verificación paso a paso
-- Configuración de funciones opcionales (AdGuard, alertas, auto-update)
-- **Cómo conectar cada dispositivo:** Windows, Mac, Fire TV Stick, Android TV y Smart TV Samsung/LG
-- Solución de problemas frecuentes
+1. Preparar la microSD desde Windows o Mac
+2. Primer arranque y conexión SSH
+3. Instalación automática paso a paso
+4. Verificación del sistema
+5. Funciones opcionales: AdGuard Home, alertas Telegram, auto-update
+6. Mantenimiento y comandos útiles
+7. Conexión de dispositivos: Windows, Mac, Fire TV Stick, Android TV, Smart TV Samsung/LG
+8. Solución de problemas frecuentes
 
 ---
 
