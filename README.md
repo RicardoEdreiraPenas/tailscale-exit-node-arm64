@@ -61,9 +61,13 @@ Tras el paso 3 abre el enlace que aparece en la terminal, aprueba el nodo en el 
 | Comando | Descripción |
 |---|---|
 | `bash scripts/install.sh` | Instalación completa (IP forwarding, Tailscale, PicoClaw, systemd) |
-| `bash scripts/status.sh` | Panel de estado: servicios, red, RAM, disco y temperatura |
+| `bash scripts/status.sh` | Panel de estado: servicios, red, RAM, disco, temperatura y ancho de banda |
 | `bash scripts/update.sh` | Actualiza Tailscale y PicoClaw a la última versión |
 | `bash scripts/uninstall.sh` | Desinstalación completa y limpieza del sistema |
+| `bash scripts/setup_adguard.sh` | Instala AdGuard Home con integración Tailscale MagicDNS |
+| `bash scripts/auto_update.sh` | Actualización automática de PicoClaw con detección de cambios por hash |
+| `bash scripts/auto_update.sh --instalar-cron` | Programa la actualización automática diaria a las 04:00 |
+| `bash scripts/alertas.sh` | Monitoriza servicios y envía notificaciones vía Telegram |
 
 ---
 
@@ -77,7 +81,10 @@ tailscale-exit-node-arm64/
 │   ├── install.sh            # Instalador automático
 │   ├── uninstall.sh          # Desinstalación completa
 │   ├── update.sh             # Actualizador de componentes
-│   └── status.sh             # Panel de estado del sistema
+│   ├── status.sh             # Panel de estado del sistema
+│   ├── setup_adguard.sh      # Instalador de AdGuard Home
+│   ├── auto_update.sh        # Actualización automática con cron
+│   └── alertas.sh            # Alertas vía Telegram
 ├── GUIA_INSTALACION.md       # Guía paso a paso desde cero (Windows/Mac)
 └── README.md
 ```
@@ -108,9 +115,9 @@ Para preparar la microSD desde cero en Windows o Mac consulta [GUIA_INSTALACION.
 
 La arquitectura actual es totalmente funcional y estable, pero siempre hay espacio para evolucionar. Estas son las mejoras planificadas para futuras versiones:
 
-- [ ] **Bloqueo de publicidad (DNS):** Integración de AdGuard Home o Pi-hole junto con Tailscale (MagicDNS) para bloquear anuncios y rastreadores directamente en los dispositivos remotos.
-- [ ] **Monitorización de ancho de banda:** Incorporación de herramientas ligeras como `vnStat` para llevar un registro del tráfico consumido por los diferentes nodos conectados.
-- [ ] **Actualizaciones automáticas:** Creación de un script cron que revise el repositorio de PicoClaw y actualice el binario ARM64 de forma automática cuando haya una nueva versión disponible.
-- [ ] **Sistema de alertas:** Implementación de notificaciones (vía Telegram o email) para avisar si la placa pierde suministro eléctrico o si el servicio de red se reinicia.
+- [x] **Bloqueo de publicidad (DNS):** AdGuard Home con integración Tailscale MagicDNS — `bash scripts/setup_adguard.sh`
+- [x] **Monitorización de ancho de banda:** vnStat integrado en el panel de estado — `bash scripts/status.sh`
+- [x] **Actualizaciones automáticas:** Cron con detección de cambios por hash MD5 — `bash scripts/auto_update.sh --instalar-cron`
+- [x] **Sistema de alertas:** Notificaciones vía Telegram para caída de servicios, temperatura y disco — `bash scripts/alertas.sh`
 
 Las contribuciones (Pull Requests) con nuevas ideas son siempre bienvenidas.

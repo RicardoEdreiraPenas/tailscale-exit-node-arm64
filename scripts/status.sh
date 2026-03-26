@@ -96,6 +96,28 @@ ok "Disco — $DISCO"
 IP_LOCAL=$(hostname -I | awk '{print $1}')
 ok "IP local: $IP_LOCAL"
 
+# --- Ancho de Banda (vnStat) ---
+echo ""
+echo -e "${NEGRITA}[ Ancho de Banda ]${RESET}"
+if command -v vnstat &>/dev/null; then
+    IFACE=$(ip route | awk '/default/ {print $5}' | head -1)
+    HOY=$(vnstat -i "$IFACE" --oneline 2>/dev/null | awk -F';' '{print "Hoy: "$10" rx / "$11" tx"}')
+    MES=$(vnstat -i "$IFACE" --oneline 2>/dev/null | awk -F';' '{print "Mes: "$15" rx / "$16" tx"}')
+    ok "$HOY"
+    ok "$MES"
+else
+    aviso "vnStat no instalado. Para activar monitorización: sudo apt install vnstat -y"
+fi
+
+# --- AdGuard Home ---
+echo ""
+echo -e "${NEGRITA}[ AdGuard Home ]${RESET}"
+if systemctl is-active --quiet AdGuardHome; then
+    ok "Servicio AdGuard Home activo"
+else
+    aviso "AdGuard Home no activo. Para instalarlo: bash scripts/setup_adguard.sh"
+fi
+
 echo ""
 echo -e "${NEGRITA}================================================${RESET}"
 echo ""
