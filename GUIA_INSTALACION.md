@@ -70,7 +70,7 @@ sudo apt update && sudo apt upgrade -y
 
 ---
 
-## Parte 3 — Instalación automática
+## Parte 3 — Instalación base
 
 ### Paso 6: Clonar el repositorio
 
@@ -81,17 +81,16 @@ cd tailscale-exit-node-arm64
 
 ### Paso 7: Ejecutar el script de instalación
 
-El script instala Tailscale, descarga PicoClaw y configura ambos servicios automáticamente:
-
 ```bash
 bash scripts/install.sh
 ```
 
-Lo que hace el script:
+El script realiza automáticamente:
 - Habilita el reenvío de paquetes IP (necesario para el exit node)
-- Instala Tailscale si no está instalado
+- Instala Tailscale
 - Descarga el binario `picoclaw` desde GitHub
-- Instala y activa el servicio `picoclaw` en systemd
+- Crea un usuario dedicado sin privilegios para el servicio
+- Instala y activa `picoclaw` como servicio systemd
 
 ### Paso 8: Activar el nodo de salida en Tailscale
 
@@ -99,20 +98,28 @@ Lo que hace el script:
 sudo tailscale up --advertise-exit-node
 ```
 
-Esto abrirá un enlace en la terminal. Ábrelo en el navegador para autenticar la placa en tu cuenta de Tailscale.
+Abre el enlace que aparece en la terminal para autenticar la placa en tu cuenta de Tailscale.
 
-### Paso 9: Aprobar el nodo de salida en el panel de Tailscale
+### Paso 9: Aprobar el nodo en el panel de Tailscale
 
 1. Ve a **https://login.tailscale.com/admin/machines**
 2. Busca tu Raspberry Pi en la lista
-3. Haz clic en los tres puntos `...` > **Edit route settings**
+3. Haz clic en `...` > **Edit route settings**
 4. Activa **Use as exit node**
 
 ---
 
 ## Parte 4 — Verificación
 
-### Comprobar que Tailscale está activo
+### Comprobar el estado de todo el sistema de un vistazo
+
+```bash
+bash scripts/status.sh
+```
+
+Muestra el estado de IP forwarding, Tailscale, PicoClaw, AdGuard Home, ancho de banda, RAM, disco y temperatura.
+
+### Verificar Tailscale
 
 ```bash
 sudo tailscale status
@@ -120,32 +127,97 @@ sudo tailscale status
 
 Debes ver tu placa listada con la etiqueta `exit node`.
 
-### Comprobar que PicoClaw está corriendo
+### Verificar PicoClaw
 
 ```bash
 sudo systemctl status picoclaw.service
 ```
 
-La salida debe mostrar `active (running)`. Si hay algún error:
+Debe mostrar `active (running)`. Si hay error:
 
 ```bash
-# Ver los últimos logs del servicio
 sudo journalctl -u picoclaw.service -n 50
 ```
 
-### Comprobar el reenvío IP
+### Verificar el reenvío IP
 
 ```bash
-sysctl net.ipv4.ip_forward
-# Debe devolver: net.ipv4.ip_forward = 1
-
-sysctl net.ipv6.conf.all.forwarding
-# Debe devolver: net.ipv6.conf.all.forwarding = 1
+sysctl net.ipv4.ip_forward        # Debe devolver: 1
+sysctl net.ipv6.conf.all.forwarding  # Debe devolver: 1
 ```
 
 ---
 
-## Parte 5 — Comandos útiles de mantenimiento
+## Parte 5 — Funciones opcionales
+
+### Bloqueo de publicidad con AdGuard Home
+
+Instala AdGuard Home y conéctalo a Tailscale MagicDNS para bloquear anuncios en todos tus dispositivos:
+
+```bash
+bash scripts/setup_adguard.sh
+```
+
+El script instala AdGuard Home y muestra los pasos para configurarlo con Tailscale. El panel web queda disponible en `http://<IP-de-la-placa>:3000`.
+
+---
+
+### Actualizaciones automáticas de PicoClaw
+
+Activa una tarea cron que comprueba cada noche si hay una nueva versión y actualiza solo si hay cambios:
+
+```bash
+# Instalar (se ejecuta todos los días a las 04:00)
+bash scripts/auto_update.sh --instalar-cron
+
+# Desinstalar
+bash scripts/auto_update.sh --desinstalar-cron
+```
+
+Los logs quedan en `/var/log/picoclaw_update.log`.
+
+---
+
+### Alertas vía Telegram
+
+Recibe una notificación en tu móvil si PicoClaw o Tailscale caen, si se va la luz o si el disco está lleno.
+
+**Paso 1:** Configura tu bot de Telegram:
+1. Habla con **@BotFather** en Telegram y crea un bot → guarda el `TOKEN`
+2. Habla con **@userinfobot** → guarda tu `CHAT_ID`
+
+**Paso 2:** Edita el script con tus datos:
+
+```bash
+nano scripts/alertas.sh
+```
+
+Rellena las variables al inicio del archivo:
+```bash
+TELEGRAM_TOKEN="tu_token_aqui"
+TELEGRAM_CHAT_ID="tu_chat_id_aqui"
+```
+
+**Paso 3:** Añade el script al cron para que se ejecute cada 5 minutos:
+
+```bash
+crontab -e
+```
+
+Añade esta línea al final:
+```
+*/5 * * * * /bin/bash /home/pi/tailscale-exit-node-arm64/scripts/alertas.sh
+```
+
+---
+
+## Parte 6 — Mantenimiento
+
+### Actualizar todos los componentes manualmente
+
+```bash
+bash scripts/update.sh
+```
 
 ### Reiniciar servicios
 
@@ -154,31 +226,20 @@ sudo systemctl restart tailscaled
 sudo systemctl restart picoclaw.service
 ```
 
-### Detener servicios
+### Ver logs en tiempo real
 
 ```bash
-sudo systemctl stop picoclaw.service
-sudo systemctl stop tailscaled
+# Logs de PicoClaw
+sudo journalctl -u picoclaw.service -f
+
+# Logs de Tailscale
+sudo journalctl -u tailscaled -f
 ```
 
-### Ver estado general del sistema
+### Desinstalar todo
 
 ```bash
-# Uso de memoria y CPU
-htop
-
-# Espacio en disco
-df -h
-
-# Temperatura de la placa
-vcgencmd measure_temp
-```
-
-### Actualizar Tailscale
-
-```bash
-sudo apt update && sudo apt upgrade tailscale -y
-sudo systemctl restart tailscaled
+bash scripts/uninstall.sh
 ```
 
 ---
@@ -186,5 +247,4 @@ sudo systemctl restart tailscaled
 ## Resiliencia: IP dinámica y cortes de luz
 
 - **IP dinámica:** Tailscale usa una red mesh basada en WireGuard. Si tu operador cambia tu IP pública, Tailscale renegocia la conexión automáticamente. No necesitas configurar puertos ni DDNS.
-
 - **Cortes de luz:** Al volver la corriente, la Raspberry Pi arranca sola. Los servicios `tailscaled` y `picoclaw` están configurados en systemd para iniciarse automáticamente. El sistema queda operativo sin intervención manual.

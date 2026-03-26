@@ -4,7 +4,7 @@ Convierte una **Raspberry Pi** o **Radxa ROCK 3C** en un nodo de salida VPN dom�
 
 ---
 
-## Como funciona
+## Cómo funciona
 
 ```
 TV Stick / Dispositivo remoto
@@ -13,8 +13,9 @@ TV Stick / Dispositivo remoto
         ▼
  Raspberry Pi (Exit Node)
         │
-        ├── tailscaled   →  gestiona la red mesh VPN
-        └── picoclaw     →  túnel residencial
+        ├── tailscaled       →  gestiona la red mesh VPN
+        ├── picoclaw         →  túnel residencial
+        └── AdGuard Home     →  bloqueo de anuncios (opcional)
         │
         ▼
   Tu conexión a internet doméstica
@@ -40,14 +41,14 @@ TV Stick / Dispositivo remoto
 git clone https://github.com/RicardoEdreiraPenas/tailscale-exit-node-arm64.git
 cd tailscale-exit-node-arm64
 
-# 2. Ejecuta el instalador (descarga picoclaw, instala Tailscale y configura los servicios)
+# 2. Ejecuta el instalador
 bash scripts/install.sh
 
 # 3. Autentica y activa el nodo de salida
 sudo tailscale up --advertise-exit-node
 ```
 
-Tras el paso 3 abre el enlace que aparece en la terminal, aprueba el nodo en el panel de Tailscale y listo.
+Tras el paso 3, abre el enlace que aparece en la terminal y aprueba el nodo en el panel de Tailscale.
 
 > **Descarga manual de PicoClaw (opcional):**
 > ```bash
@@ -58,16 +59,29 @@ Tras el paso 3 abre el enlace que aparece en la terminal, aprueba el nodo en el 
 
 ## Scripts
 
+### Instalación y mantenimiento
+
 | Comando | Descripción |
 |---|---|
-| `bash scripts/install.sh` | Instalación completa (IP forwarding, Tailscale, PicoClaw, systemd) |
-| `bash scripts/status.sh` | Panel de estado: servicios, red, RAM, disco, temperatura y ancho de banda |
-| `bash scripts/update.sh` | Actualiza Tailscale y PicoClaw a la última versión |
+| `bash scripts/install.sh` | Instalación completa: IP forwarding, Tailscale, PicoClaw y systemd |
+| `bash scripts/update.sh` | Actualiza Tailscale y PicoClaw a la última versión manualmente |
 | `bash scripts/uninstall.sh` | Desinstalación completa y limpieza del sistema |
+
+### Monitorización
+
+| Comando | Descripción |
+|---|---|
+| `bash scripts/status.sh` | Panel de estado: servicios, red, RAM, disco, temperatura y ancho de banda |
+
+### Funciones opcionales
+
+| Comando | Descripción |
+|---|---|
 | `bash scripts/setup_adguard.sh` | Instala AdGuard Home con integración Tailscale MagicDNS |
-| `bash scripts/auto_update.sh` | Actualización automática de PicoClaw con detección de cambios por hash |
+| `bash scripts/auto_update.sh` | Comprueba y aplica actualizaciones de PicoClaw por hash MD5 |
 | `bash scripts/auto_update.sh --instalar-cron` | Programa la actualización automática diaria a las 04:00 |
-| `bash scripts/alertas.sh` | Monitoriza servicios y envía notificaciones vía Telegram |
+| `bash scripts/auto_update.sh --desinstalar-cron` | Elimina la tarea cron de actualización automática |
+| `bash scripts/alertas.sh` | Monitoriza servicios y envía alertas vía Telegram |
 
 ---
 
@@ -80,7 +94,7 @@ tailscale-exit-node-arm64/
 ├── scripts/
 │   ├── install.sh            # Instalador automático
 │   ├── uninstall.sh          # Desinstalación completa
-│   ├── update.sh             # Actualizador de componentes
+│   ├── update.sh             # Actualizador manual de componentes
 │   ├── status.sh             # Panel de estado del sistema
 │   ├── setup_adguard.sh      # Instalador de AdGuard Home
 │   ├── auto_update.sh        # Actualización automática con cron
@@ -93,7 +107,7 @@ tailscale-exit-node-arm64/
 
 ## Resiliencia
 
-- **IP dinámica:** Tailscale usa una red mesh basada en WireGuard. Si tu operador cambia tu IP pública, las conexiones se renegocian de forma automática. Sin DDNS, sin reenvío de puertos.
+- **IP dinámica:** Tailscale usa una red mesh basada en WireGuard. Si tu operador cambia tu IP pública, las conexiones se renegocian automáticamente. Sin DDNS, sin reenvío de puertos.
 - **Cortes de luz:** Al recuperarse la corriente, la Raspberry Pi arranca y los servicios `tailscaled` y `picoclaw` se inician solos gracias a systemd. Sin intervención manual.
 
 ---
@@ -112,8 +126,6 @@ Para preparar la microSD desde cero en Windows o Mac consulta [GUIA_INSTALACION.
 ---
 
 ## Roadmap
-
-La arquitectura actual es totalmente funcional y estable, pero siempre hay espacio para evolucionar. Estas son las mejoras planificadas para futuras versiones:
 
 - [x] **Bloqueo de publicidad (DNS):** AdGuard Home con integración Tailscale MagicDNS — `bash scripts/setup_adguard.sh`
 - [x] **Monitorización de ancho de banda:** vnStat integrado en el panel de estado — `bash scripts/status.sh`
