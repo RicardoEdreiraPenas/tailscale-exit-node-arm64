@@ -61,12 +61,13 @@ ssh pi@raspberrypi.local
 > ssh pi@192.168.1.XXX
 > ```
 
-### Paso 5: Actualizar el sistema
+### Paso 5: Actualizar el sistema e instalar Git
 
-Una vez dentro de la Raspberry Pi, actualiza los paquetes:
+Una vez dentro de la Raspberry Pi, actualiza los paquetes e instala Git:
 
 ```bash
 sudo apt update && sudo apt upgrade -y
+sudo apt install git -y
 ```
 
 ---
