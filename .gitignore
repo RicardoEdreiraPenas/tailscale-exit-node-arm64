@@ -1,14 +1,21 @@
 # Binario descargado en local (no debe subirse al repo)
 picoclaw
 scripts/picoclaw
+*.deb
 
 # Logs
 *.log
+logs/
 
-# Variables de entorno
+# Variables de entorno y secretos
 .env
 *.env
+secrets.sh
+config.local.sh
 
 # Archivos del sistema
 .DS_Store
 Thumbs.db
+
+# Archivos de configuración con credenciales (picoclaw onboard)
+config.json
