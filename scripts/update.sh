@@ -5,7 +5,7 @@
 # Actualiza Tailscale y PicoClaw a sus últimas versiones
 # ==============================================================================
 
-PICOCLAW_URL="https://github.com/sipeed/picoclaw/releases/download/v0.2.4/picoclaw-linux-arm64"
+PICOCLAW_URL="https://github.com/sipeed/picoclaw/releases/download/v0.2.4/picoclaw_aarch64.deb"
 
 echo "Iniciando actualización del sistema..."
 
@@ -27,27 +27,27 @@ fi
 echo ""
 echo "[ 2/2 ] Actualizando PicoClaw..."
 
-TMP_BIN=$(mktemp)
+TMP_DEB=$(mktemp --suffix=.deb)
 
 if command -v wget &>/dev/null; then
-    wget -q "$PICOCLAW_URL" -O "$TMP_BIN"
+    wget -q "$PICOCLAW_URL" -O "$TMP_DEB"
 elif command -v curl &>/dev/null; then
-    curl -fsSL "$PICOCLAW_URL" -o "$TMP_BIN"
+    curl -fsSL "$PICOCLAW_URL" -o "$TMP_DEB"
 else
     echo "Error: se necesita wget o curl para descargar PicoClaw."
-    rm -f "$TMP_BIN"
+    rm -f "$TMP_DEB"
     exit 1
 fi
 
-if [ -s "$TMP_BIN" ]; then
+if [ -s "$TMP_DEB" ]; then
     sudo systemctl stop picoclaw.service 2>/dev/null
-    sudo chmod +x "$TMP_BIN"
-    sudo mv "$TMP_BIN" /usr/local/bin/picoclaw
+    sudo dpkg -i "$TMP_DEB"
+    rm -f "$TMP_DEB"
     sudo systemctl start picoclaw.service
     echo "PicoClaw actualizado e iniciado correctamente."
 else
     echo "Error: la descarga de PicoClaw falló o el archivo está vacío."
-    rm -f "$TMP_BIN"
+    rm -f "$TMP_DEB"
     exit 1
 fi
 

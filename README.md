@@ -77,7 +77,8 @@ sudo tailscale up --advertise-exit-node
 <summary>📦 Descarga manual de PicoClaw (opcional)</summary>
 
 ```bash
-wget https://github.com/sipeed/picoclaw/releases/download/v0.2.4/picoclaw-linux-arm64 -O picoclaw
+wget https://github.com/sipeed/picoclaw/releases/download/v0.2.4/picoclaw_aarch64.deb -O /tmp/picoclaw.deb
+sudo dpkg -i /tmp/picoclaw.deb
 ```
 
 </details>

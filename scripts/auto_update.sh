@@ -6,7 +6,7 @@
 # También puede instalarse como tarea cron para ejecución periódica
 # ==============================================================================
 
-PICOCLAW_URL="https://github.com/sipeed/picoclaw/releases/download/v0.2.4/picoclaw-linux-arm64"
+PICOCLAW_URL="https://github.com/sipeed/picoclaw/releases/download/v0.2.4/picoclaw_aarch64.deb"
 LOG_FILE="/var/log/picoclaw_update.log"
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 
