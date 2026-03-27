@@ -6,8 +6,8 @@ Wants=network-online.target
 [Service]
 Type=simple
 # Usuario dedicado sin privilegios (creado por install.sh)
-User=picoclaw
-Group=picoclaw
+User=ricardo
+Group=ricardo
 # Ruta donde el script install.sh coloca el ejecutable
 ExecStart=/usr/bin/picoclaw gateway
 Restart=on-failure
