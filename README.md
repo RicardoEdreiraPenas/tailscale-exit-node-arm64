@@ -199,8 +199,9 @@ Al recuperarse la corriente, la Raspberry Pi arranca y los servicios se inician 
 | 4️⃣ | Verificación del sistema |
 | 5️⃣ | Funciones opcionales: AdGuard Home, alertas Telegram, auto-update |
 | 6️⃣ | Mantenimiento y comandos útiles |
-| 7️⃣ | Conexión de dispositivos: Windows, Mac, Fire TV Stick, Android TV, Smart TV |
-| 8️⃣ | Solución de problemas frecuentes |
+| 7️⃣ | Prueba definitiva desde el móvil |
+| 8️⃣ | Conexión de dispositivos: Windows, Mac, Fire TV Stick, Android TV, Smart TV |
+| 9️⃣ | Solución de problemas frecuentes |
 
 ---
 

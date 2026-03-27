@@ -256,7 +256,37 @@ bash scripts/uninstall.sh
 
 ---
 
-## Parte 7 — Conectar tus dispositivos al Exit Node
+## Parte 7 — Prueba definitiva desde el móvil
+
+Esta prueba simula que estás de viaje o en otra casa y confirma que el túnel funciona correctamente.
+
+### Paso 1: Preparación
+
+**Desconecta el Wi-Fi de tu móvil** y quédate solo con datos móviles (4G/5G). Si estás en el mismo Wi-Fi que la Raspberry Pi, la prueba no será real.
+
+### Paso 2: Conectar en la app
+
+1. Descarga **Tailscale** desde la App Store o Google Play
+2. Inicia sesión con la misma cuenta que usaste en la Raspberry Pi
+3. Verás tus dispositivos: tu Mac, tu móvil y `pico-r-node`
+4. Activa el interruptor principal (te pedirá permiso para añadir una VPN — acepta)
+
+### Paso 3: Activar el Exit Node
+
+1. Toca el menú (tres puntos o ajustes, según iOS/Android)
+2. Selecciona **Use exit node**
+3. Elige **pico-r-node** de la lista
+4. Verás el mensaje: *Routing all traffic through pico-r-node*
+
+### Paso 4: Verificar que funciona
+
+Abre el navegador del móvil y busca **"cuál es mi IP"** o ve directamente a [whatismyip.com](https://whatismyip.com).
+
+**Resultado esperado:** el ISP que aparece debe ser el de tu casa (Movistar, Digi, Vodafone, etc.), no el de tu compañía móvil. Si es así, todo el tráfico viaja encriptado hasta la Raspberry Pi y sale a internet desde tu IP doméstica.
+
+---
+
+## Parte 8 — Conectar tus dispositivos al Exit Node
 
 Una vez la Raspberry Pi está configurada, conecta tus dispositivos instalando Tailscale en cada uno y seleccionando tu placa como nodo de salida.
 
