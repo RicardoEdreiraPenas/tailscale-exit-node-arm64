@@ -69,8 +69,14 @@ fi
 # 4. Crear usuario dedicado para PicoClaw (sin shell ni directorio home)
 if ! id "picoclaw" &>/dev/null; then
     echo "Creando usuario 'picoclaw'..."
-    sudo useradd --system --no-create-home --shell /usr/sbin/nologin picoclaw
+    sudo useradd --system --create-home --home-dir /home/picoclaw --shell /usr/sbin/nologin picoclaw
     echo "Usuario 'picoclaw' creado."
+fi
+
+# Asegurar que el directorio home existe y tiene los permisos correctos
+if [ ! -d /home/picoclaw ]; then
+    sudo mkdir -p /home/picoclaw
+    sudo chown picoclaw:picoclaw /home/picoclaw
 fi
 
 # 5. Configurar e iniciar el servicio Systemd para PicoClaw

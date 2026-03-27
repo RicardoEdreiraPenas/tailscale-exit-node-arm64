@@ -17,8 +17,6 @@ MemoryLimit=50M
 # Restricciones de seguridad
 NoNewPrivileges=true
 PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=true
 
 [Install]
 WantedBy=multi-user.target
