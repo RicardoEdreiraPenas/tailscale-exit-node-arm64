@@ -36,7 +36,7 @@
 ╔══════════════════════════════════════════════════════════╗
 ║              🍓 RASPBERRY PI  (tu casa)                  ║                                     ║
 ║   ├── 🔗 tailscaled    →  red mesh VPN                   ║
-║   ├── 🚇 picoclaw      →  túnel residencial              ║
+║   ├── 🤖 picoclaw      →  asistente IA vía Telegram      ║
 ║   └── 🛡️ AdGuard Home  →  bloqueo de anuncios            ║
 ╚═══════════════════════╦══════════════════════════════════╝
                         ║

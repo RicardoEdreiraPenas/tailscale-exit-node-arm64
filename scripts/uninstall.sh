@@ -22,7 +22,13 @@ fi
 echo "Eliminando archivos instalados..."
 
 [ -f /etc/systemd/system/picoclaw.service ] && sudo rm /etc/systemd/system/picoclaw.service
-[ -f /usr/local/bin/picoclaw ]              && sudo rm /usr/local/bin/picoclaw
+# Desinstalar paquete dpkg si está registrado, o eliminar el binario directamente
+if dpkg -s picoclaw &>/dev/null 2>&1; then
+    sudo dpkg -r picoclaw
+elif [ -f /usr/bin/picoclaw ]; then
+    sudo rm /usr/bin/picoclaw
+fi
+sudo rm -f /var/lib/picoclaw_last_hash
 
 sudo systemctl daemon-reload
 

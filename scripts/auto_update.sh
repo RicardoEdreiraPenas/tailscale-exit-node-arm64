@@ -8,6 +8,7 @@
 
 PICOCLAW_URL="https://github.com/sipeed/picoclaw/releases/download/v0.2.4/picoclaw_aarch64.deb"
 LOG_FILE="/var/log/picoclaw_update.log"
+LAST_HASH_FILE="/var/lib/picoclaw_last_hash"
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | sudo tee -a "$LOG_FILE"; }
@@ -30,45 +31,46 @@ fi
 # --- Lógica de actualización ---
 log "Comprobando actualizaciones de PicoClaw..."
 
-# Obtener el hash MD5 de la versión instalada
+# Hash MD5 del último .deb instalado (guardado por este script)
 HASH_ACTUAL=""
-if [ -f /usr/local/bin/picoclaw ]; then
-    HASH_ACTUAL=$(md5sum /usr/local/bin/picoclaw | awk '{print $1}')
+if [ -f "$LAST_HASH_FILE" ]; then
+    HASH_ACTUAL=$(cat "$LAST_HASH_FILE")
 fi
 
 # Descargar la última versión a un archivo temporal
-TMP_BIN=$(mktemp)
+TMP_DEB=$(mktemp --suffix=.deb)
 
 if command -v wget &>/dev/null; then
-    wget -q "$PICOCLAW_URL" -O "$TMP_BIN"
+    wget -q "$PICOCLAW_URL" -O "$TMP_DEB"
 elif command -v curl &>/dev/null; then
-    curl -fsSL "$PICOCLAW_URL" -o "$TMP_BIN"
+    curl -fsSL "$PICOCLAW_URL" -o "$TMP_DEB"
 else
     log "Error: se necesita wget o curl."
-    rm -f "$TMP_BIN"
+    rm -f "$TMP_DEB"
     exit 1
 fi
 
-if [ ! -s "$TMP_BIN" ]; then
+if [ ! -s "$TMP_DEB" ]; then
     log "Error: la descarga falló o el archivo está vacío."
-    rm -f "$TMP_BIN"
+    rm -f "$TMP_DEB"
     exit 1
 fi
 
-HASH_NUEVO=$(md5sum "$TMP_BIN" | awk '{print $1}')
+HASH_NUEVO=$(md5sum "$TMP_DEB" | awk '{print $1}')
 
 # Comparar hashes para saber si hay cambio real
 if [ "$HASH_ACTUAL" = "$HASH_NUEVO" ]; then
     log "PicoClaw ya está en la última versión. Sin cambios."
-    rm -f "$TMP_BIN"
+    rm -f "$TMP_DEB"
     exit 0
 fi
 
 log "Nueva versión detectada. Actualizando..."
 
 sudo systemctl stop picoclaw.service 2>/dev/null
-sudo chmod +x "$TMP_BIN"
-sudo mv "$TMP_BIN" /usr/local/bin/picoclaw
+sudo dpkg -i "$TMP_DEB"
+echo "$HASH_NUEVO" | sudo tee "$LAST_HASH_FILE" > /dev/null
+rm -f "$TMP_DEB"
 sudo systemctl start picoclaw.service
 
 if systemctl is-active --quiet picoclaw.service; then

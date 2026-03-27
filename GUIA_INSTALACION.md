@@ -90,7 +90,7 @@ bash scripts/install.sh
 El script realiza automáticamente:
 - Habilita el reenvío de paquetes IP (necesario para el exit node)
 - Instala Tailscale
-- Descarga el binario `picoclaw` desde GitHub
+- Descarga e instala PicoClaw desde su paquete `.deb` oficial (ARM64)
 - Crea un usuario dedicado sin privilegios para el servicio
 - Instala y activa `picoclaw` como servicio systemd
 
@@ -101,6 +101,11 @@ sudo tailscale up --advertise-exit-node
 ```
 
 Abre el enlace que aparece en la terminal para autenticar la placa en tu cuenta de Tailscale.
+
+> **Nota:** Si ya habías ejecutado este comando antes con rutas adicionales (`--advertise-routes`), Tailscale te pedirá que incluyas todos los flags anteriores. Usa el comando exacto que te sugiera el error, por ejemplo:
+> ```bash
+> sudo tailscale up --advertise-exit-node --advertise-routes=192.168.1.100/32
+> ```
 
 ### Paso 9: Aprobar el nodo en el panel de Tailscale
 
@@ -206,9 +211,14 @@ TELEGRAM_CHAT_ID="tu_chat_id_aqui"
 crontab -e
 ```
 
-Añade esta línea al final:
+Añade esta línea al final (ajusta la ruta a tu directorio real):
 ```
-*/5 * * * * /bin/bash /home/pi/tailscale-exit-node-arm64/scripts/alertas.sh
+*/5 * * * * /bin/bash /home/TU_USUARIO/tailscale-exit-node-arm64/scripts/alertas.sh
+```
+
+Por ejemplo, si tu usuario es `ricardo`:
+```
+*/5 * * * * /bin/bash /home/ricardo/tailscale-exit-node-arm64/scripts/alertas.sh
 ```
 
 ---
@@ -339,18 +349,22 @@ Ahora en tu Smart TV (Samsung/LG):
 | PicoClaw no arranca | Ejecuta `sudo journalctl -u picoclaw.service -n 50` para ver el error |
 | Error `Bad message` al instalar Tailscale | La tarjeta SD tiene un error de escritura. Ejecuta los comandos de reparación de abajo |
 | Error `cannot append to alternatives.log` | Mismo problema de SD. Ver reparación abajo |
+| Error `changing settings via 'tailscale up' requires mentioning all non-default flags` | Copia el comando exacto que sugiere el error e inclúyelo completo con todos los flags |
 
 **Reparar errores de escritura en la tarjeta SD:**
 
 ```bash
-# 1. Reparar paquetes rotos
+# 1. Forzar comprobación del sistema de archivos en el próximo arranque
+sudo touch /forcefsck
+sudo reboot
+
+# 2. Tras reiniciar, reparar el log corrupto y los paquetes rotos
+sudo rm /var/log/alternatives.log
+sudo touch /var/log/alternatives.log
 sudo dpkg --configure -a
 sudo apt --fix-broken install -y
 
-# 2. Si persiste el error, reparar el sistema de archivos (requiere reiniciar)
-sudo reboot
-
-# 3. Tras reiniciar, volver a lanzar el instalador
+# 3. Volver a lanzar el instalador
 bash scripts/install.sh
 ```
 
