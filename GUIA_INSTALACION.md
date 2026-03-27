@@ -33,8 +33,7 @@ Descarga e instala la herramienta oficial desde:
 4. **Elegir Almacenamiento:** selecciona tu tarjeta microSD
 5. Haz clic en **Editar ajustes** (icono del engranaje) y configura:
    - **SSH:** habilitar con autenticación por contraseña
-   - <img width="1226" height="332" alt="image" src="https://github.com/user-attachments/assets/90f81daa-5987-4478-9664-d3d2ebf70397" />
-   - **Usuario:** ej. `pi` con una contraseña segura
+   - **Usuario:** elige un nombre de usuario y una contraseña segura (recuérdalo, lo usarás para conectarte por SSH)
    - **Wi-Fi:** introduce tu SSID y contraseña
    - **Zona horaria:** ajusta a tu región
 6. Guarda y haz clic en **Escribir**. Espera a que termine.
@@ -402,7 +401,12 @@ bash scripts/install.sh
 
 ---
 
-## Resiliencia: IP dinámica y cortes de luz
+## Parte 9 — Resiliencia
 
-- **IP dinámica:** Tailscale usa una red mesh basada en WireGuard. Si tu operador cambia tu IP pública, Tailscale renegocia la conexión automáticamente. No necesitas configurar puertos ni DDNS.
-- **Cortes de luz:** Al volver la corriente, la Raspberry Pi arranca sola. Los servicios `tailscaled` y `picoclaw` están configurados en systemd para iniciarse automáticamente. El sistema queda operativo sin intervención manual.
+### IP dinámica
+
+Tailscale usa una red mesh basada en WireGuard. Si tu operador cambia tu IP pública, Tailscale renegocia la conexión automáticamente. No necesitas configurar puertos ni DDNS.
+
+### Cortes de luz
+
+Al volver la corriente, la Raspberry Pi arranca sola. Los servicios `tailscaled` y `picoclaw` están configurados en systemd para iniciarse automáticamente. El sistema queda operativo sin intervención manual.

@@ -34,7 +34,7 @@
                         ║  🔒 VPN Tailscale (WireGuard)
                         ▼
 ╔══════════════════════════════════════════════════════════╗
-║              🍓 RASPBERRY PI  (tu casa)                  ║                                     ║
+║              🍓 RASPBERRY PI  (tu casa)                  ║
 ║   ├── 🔗 tailscaled    →  red mesh VPN                   ║
 ║   ├── 🤖 picoclaw      →  asistente IA vía Telegram      ║
 ║   └── 🛡️ AdGuard Home  →  bloqueo de anuncios            ║
@@ -53,7 +53,7 @@
 | Raspberry Pi 4, 5 o Radxa ROCK 3C | Raspberry Pi OS Lite **64-bit (ARM64)** |
 | Tarjeta microSD 8 GB o más | Cuenta gratuita en [tailscale.com](https://tailscale.com) |
 
-> 💡 El binario `picoclaw` se descarga automáticamente durante la instalación.
+> 💡 El paquete `.deb` de `picoclaw` se descarga e instala automáticamente durante la instalación.
 
 ---
 
@@ -181,9 +181,9 @@ Al recuperarse la corriente, la Raspberry Pi arranca y los servicios se inician 
 
 ## 🔒 Seguridad
 
-- 🔐 El servicio `picoclaw` corre bajo un **usuario dedicado sin shell ni privilegios** (`NoNewPrivileges`, `ProtectSystem`, `PrivateTmp`)
-- 📦 El binario `picoclaw` **no se incluye en el repositorio** y se descarga siempre desde la release oficial de GitHub
-- 🚫 Excluido en `.gitignore` para evitar subidas accidentales
+- 🔐 El servicio `picoclaw` corre con `NoNewPrivileges` y `PrivateTmp` para limitar su superficie de ataque
+- 📦 El paquete `picoclaw` **no se incluye en el repositorio** y se descarga siempre desde la release oficial de GitHub
+- 🚫 Binarios, logs y archivos de configuración con credenciales excluidos en `.gitignore`
 
 ---
 
