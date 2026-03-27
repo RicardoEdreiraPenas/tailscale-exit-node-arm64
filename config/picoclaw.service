@@ -9,7 +9,7 @@ Type=simple
 User=picoclaw
 Group=picoclaw
 # Ruta donde el script install.sh coloca el ejecutable
-ExecStart=/usr/local/bin/picoclaw
+ExecStart=/usr/bin/picoclaw
 Restart=on-failure
 RestartSec=10
 # Límite de memoria

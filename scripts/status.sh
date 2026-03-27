@@ -55,10 +55,10 @@ fi
 # --- PicoClaw ---
 echo ""
 echo -e "${NEGRITA}[ PicoClaw ]${RESET}"
-if [ -f /usr/local/bin/picoclaw ]; then
-    ok "Binario instalado en /usr/local/bin/picoclaw"
+if [ -f /usr/bin/picoclaw ]; then
+    ok "Binario instalado en /usr/bin/picoclaw"
 else
-    fallo "Binario NO encontrado en /usr/local/bin/"
+    fallo "Binario NO encontrado en /usr/bin/"
 fi
 
 if systemctl is-active --quiet picoclaw.service; then
