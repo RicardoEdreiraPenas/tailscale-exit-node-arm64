@@ -5,7 +5,7 @@
 # Actualiza Tailscale y PicoClaw a sus últimas versiones
 # ==============================================================================
 
-PICOCLAW_URL="https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_linux_arm64"
+PICOCLAW_URL="https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw-linux-arm64"
 
 echo "Iniciando actualización del sistema..."
 

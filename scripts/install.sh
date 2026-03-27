@@ -34,7 +34,7 @@ fi
 
 # 3. Descargar e instalar el binario de PicoClaw
 PICOCLAW_BIN="$REPO_DIR/picoclaw"
-PICOCLAW_URL="https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw_linux_arm64"
+PICOCLAW_URL="https://github.com/sipeed/picoclaw/releases/latest/download/picoclaw-linux-arm64"
 
 if [ ! -f "$PICOCLAW_BIN" ]; then
     echo "Binario 'picoclaw' no encontrado. Descargando desde GitHub..."
