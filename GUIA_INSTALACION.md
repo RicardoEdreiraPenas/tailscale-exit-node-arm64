@@ -337,6 +337,24 @@ Ahora en tu Smart TV (Samsung/LG):
 | Fire TV no encuentra Tailscale en la tienda | Activa "Fuentes desconocidas" y descarga el APK desde tailscale.com |
 | Smart TV Samsung/LG no puede instalar apps | Usa la opción de gateway manual explicada en la sección anterior |
 | PicoClaw no arranca | Ejecuta `sudo journalctl -u picoclaw.service -n 50` para ver el error |
+| Error `Bad message` al instalar Tailscale | La tarjeta SD tiene un error de escritura. Ejecuta los comandos de reparación de abajo |
+| Error `cannot append to alternatives.log` | Mismo problema de SD. Ver reparación abajo |
+
+**Reparar errores de escritura en la tarjeta SD:**
+
+```bash
+# 1. Reparar paquetes rotos
+sudo dpkg --configure -a
+sudo apt --fix-broken install -y
+
+# 2. Si persiste el error, reparar el sistema de archivos (requiere reiniciar)
+sudo reboot
+
+# 3. Tras reiniciar, volver a lanzar el instalador
+bash scripts/install.sh
+```
+
+> Si el error persiste tras el reinicio, la tarjeta SD puede estar fallando. Considera grabar una imagen nueva.
 
 ---
 

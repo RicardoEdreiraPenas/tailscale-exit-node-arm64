@@ -39,22 +39,24 @@ PICOCLAW_URL="https://github.com/sipeed/picoclaw/releases/latest/download/picocl
 if [ ! -f "$PICOCLAW_BIN" ]; then
     echo "Binario 'picoclaw' no encontrado. Descargando desde GitHub..."
     if command -v wget &> /dev/null; then
-        wget "$PICOCLAW_URL" -O "$PICOCLAW_BIN"
+        wget --server-response "$PICOCLAW_URL" -O "$PICOCLAW_BIN" 2>&1 | grep "HTTP/" | tail -1 | grep -q "200" || { rm -f "$PICOCLAW_BIN"; echo "Error: descarga fallida (URL no encontrada)."; exit 1; }
     elif command -v curl &> /dev/null; then
-        curl -fsSL "$PICOCLAW_URL" -o "$PICOCLAW_BIN"
+        curl -fsSL "$PICOCLAW_URL" -o "$PICOCLAW_BIN" || { rm -f "$PICOCLAW_BIN"; echo "Error: descarga fallida (URL no encontrada)."; exit 1; }
     else
         echo "Error: se necesita wget o curl para descargar PicoClaw."
         exit 1
     fi
 fi
 
-if [ -f "$PICOCLAW_BIN" ]; then
+# Verificar que el archivo descargado tiene contenido real
+if [ -f "$PICOCLAW_BIN" ] && [ -s "$PICOCLAW_BIN" ]; then
     echo "Instalando binario de PicoClaw..."
     sudo chmod +x "$PICOCLAW_BIN"
     sudo mv "$PICOCLAW_BIN" /usr/local/bin/
     echo "PicoClaw instalado en /usr/local/bin/"
 else
-    echo "Error: No se pudo obtener el binario 'picoclaw'. Abortando."
+    rm -f "$PICOCLAW_BIN"
+    echo "Error: el archivo descargado está vacío o es inválido. Abortando."
     exit 1
 fi
 
