@@ -33,6 +33,7 @@ Descarga e instala la herramienta oficial desde:
 4. **Elegir Almacenamiento:** selecciona tu tarjeta microSD
 5. Haz clic en **Editar ajustes** (icono del engranaje) y configura:
    - **SSH:** habilitar con autenticación por contraseña
+   - <img width="1226" height="332" alt="image" src="https://github.com/user-attachments/assets/90f81daa-5987-4478-9664-d3d2ebf70397" />
    - **Usuario:** ej. `pi` con una contraseña segura
    - **Wi-Fi:** introduce tu SSID y contraseña
    - **Zona horaria:** ajusta a tu región
