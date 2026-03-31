@@ -91,7 +91,7 @@ sudo dpkg -i /tmp/picoclaw.deb
 |:---:|:---:|:---|
 | 🖥️ **Windows** | [Descargar](https://tailscale.com/download/windows) | Instala Tailscale → bandeja del sistema → **Exit Node** → selecciona la Raspberry Pi |
 | 🍎 **Mac** | [App Store](https://apps.apple.com/app/tailscale/id1475387142) | Instala Tailscale → barra de menú → **Exit Node** → selecciona la Raspberry Pi |
-| 📺 **Fire TV Stick** | Tienda Amazon | Busca *Tailscale* → instala → activa **Exit Node** en la app |
+| 📺 **Fire TV Stick** | APK directo | Activa opciones de desarrollador → instala **Downloader** → descarga desde `pkgs.tailscale.com/stable` → escanea QR → activa **Exit Node** |
 | 📱 **Android TV / Google TV** | Google Play | Busca *Tailscale* → instala → activa **Exit Node** en la app |
 | 📺 **Smart TV Samsung / LG** | Sin app | Configura la Raspberry Pi como **gateway** en los ajustes de red del TV |
 

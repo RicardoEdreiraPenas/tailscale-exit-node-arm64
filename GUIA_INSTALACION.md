@@ -317,16 +317,35 @@ Una vez la Raspberry Pi está configurada, conecta tus dispositivos instalando T
 
 ### Fire TV Stick (Amazon)
 
-Tailscale tiene app oficial para Fire TV Stick.
+Tailscale **no está disponible en la tienda de Amazon**, por lo que la instalación se hace mediante descarga directa del APK oficial.
 
-1. En tu Fire TV Stick, ve a la **tienda de aplicaciones**
-2. Busca **Tailscale** e instálala
-3. Abre Tailscale e inicia sesión con tu cuenta
-4. Una vez conectado, pulsa el botón de menú de la app
-5. Selecciona **Use exit node** > elige tu Raspberry Pi
+### Requisitos previos
+
+1. **Activar opciones de desarrollador:** Configuración > Mi Fire TV > Acerca de > pulsa 7 veces sobre el nombre del dispositivo
+2. **Activar "Apps de origen desconocido"** dentro del menú Opciones para desarrolladores
+3. **Instalar "Downloader"** desde la tienda oficial del Fire TV
+
+### Instalación paso a paso
+
+1. Abre **Downloader** y concédele permisos de almacenamiento si los solicita
+2. Selecciona la barra de URL e introduce exactamente:
+   ```
+   pkgs.tailscale.com/stable
+   ```
+3. Pulsa **Go**. Se cargará una página de texto plano con el directorio oficial de paquetes
+4. Baja con los botones del mando hasta la sección **"Universal Android application package (APK)"**
+5. Selecciona el enlace de la versión más reciente (ej. `tailscale-android-universal-1.96.4.apk`)
+6. La descarga comenzará al instante. Cuando termine, pulsa **Instalar**
+7. (Recomendado) Pulsa **Delete** en Downloader para borrar el APK y liberar espacio
+
+### Configuración final
+
+1. Abre la app **Tailscale** recién instalada
+2. Acepta los permisos de conexión VPN que solicite Fire OS
+3. Pulsa **Get Started** — aparecerá un código QR en pantalla
+4. Escanea el QR con tu móvil e inicia sesión con la misma cuenta que administra tu red Tailscale
+5. Una vez conectado, activa **Use exit node** > selecciona tu Raspberry Pi
 6. Listo. El streaming saldrá por tu IP doméstica.
-
-> Si no encuentras Tailscale en la tienda, activa **"Aplicaciones de fuentes desconocidas"** en Configuración > Mi Fire TV > Opciones para desarrolladores, y descárgala desde el navegador Silk.
 
 ---
 
