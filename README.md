@@ -125,6 +125,8 @@ sudo dpkg -i /tmp/picoclaw.deb
 | `bash scripts/auto_update.sh --desinstalar-cron` | ❌ Elimina la tarea cron de actualización automática |
 | `bash scripts/alertas.sh` | 📬 Monitoriza servicios y envía alertas vía Telegram |
 
+> 🤖 Consulta [GUIA_PICOCLAW_IA.md](GUIA_PICOCLAW_IA.md) para configurar el asistente IA con Telegram paso a paso.
+
 ---
 
 ## 📁 Estructura del repositorio
