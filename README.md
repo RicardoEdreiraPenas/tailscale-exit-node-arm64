@@ -4,7 +4,7 @@
 
 ### Convierte tu Raspberry Pi en un nodo de salida VPN doméstico
 
-*Navega desde cualquier lugar del mundo a través de tu IP residencial — automático, seguro y sin mantenimiento*
+*Navega desde cualquier sitio con la IP de tu casa: cifrado, sin abrir puertos y con actualizaciones automáticas*
 
 <img width="2752" height="1536" alt="image" src="https://github.com/user-attachments/assets/6f0b06b6-763a-4f96-b389-aa7ec38db590" />
 
@@ -35,9 +35,10 @@
                         ▼
 ╔══════════════════════════════════════════════════════════╗
 ║              🍓 RASPBERRY PI  (tu casa)                  ║
-║   ├── 🔗 tailscaled    →  red mesh VPN                   ║
-║   ├── 🤖 picoclaw      →  asistente IA vía Telegram      ║
-║   └── 🛡️ AdGuard Home  →  bloqueo de anuncios            ║
+║   ├── 🔗 tailscaled    →  red mesh VPN (WireGuard)       ║
+║   ├── 🧱 ufw           →  entrada cerrada                ║
+║   ├── 🛡️ AdGuard/Pi-hole → bloqueo de anuncios (opcional)║
+║   └── 🤖 picoclaw      →  estado por Telegram (opcional) ║
 ╚═══════════════════════╦══════════════════════════════════╝
                         ║
                         ▼
@@ -53,7 +54,7 @@
 | Raspberry Pi 4, 5 o Radxa ROCK 3C | Raspberry Pi OS Lite **64-bit (ARM64)** |
 | Tarjeta microSD 8 GB o más | Cuenta gratuita en [tailscale.com](https://tailscale.com) |
 
-> 💡 El paquete `.deb` de `picoclaw` se descarga e instala automáticamente durante la instalación.
+> 💡 Todo lo que se descarga se comprueba con su suma SHA-256 antes de instalarse (`versiones.conf`).
 
 ---
 
@@ -64,24 +65,19 @@
 git clone https://github.com/RicardoEdreiraPenas/tailscale-exit-node-arm64.git
 cd tailscale-exit-node-arm64
 
-# 2️⃣  Ejecuta el instalador (descarga todo automáticamente)
-bash scripts/install.sh
+# 2️⃣  Instala (bloqueador: adguard, pihole o ninguno)
+sudo bash scripts/install.sh --bloqueador=adguard
 
 # 3️⃣  Autentica y activa el nodo de salida
 sudo tailscale up --advertise-exit-node
+
+# 4️⃣  Comprueba que todo está en verde
+sudo bash scripts/status.sh
 ```
 
-> Tras el paso 3️⃣, abre el enlace que aparece en la terminal y aprueba el nodo en el panel de Tailscale.
+> Tras el paso 3️⃣, abre el enlace que aparece en la terminal y aprueba el nodo en el panel de Tailscale (**Edit route settings → Use as exit node**).
 
-<details>
-<summary>📦 Descarga manual de PicoClaw (opcional)</summary>
-
-```bash
-wget https://github.com/sipeed/picoclaw/releases/download/v0.2.4/picoclaw_aarch64.deb -O /tmp/picoclaw.deb
-sudo dpkg -i /tmp/picoclaw.deb
-```
-
-</details>
+> ¿Venías de una versión anterior? Ejecuta el instalador igual: detecta el servicio antiguo de PicoClaw y la tarea cron de actualización, los desactiva y te dice cómo seguir.
 
 ---
 
@@ -93,7 +89,7 @@ sudo dpkg -i /tmp/picoclaw.deb
 | 🍎 **Mac** | [App Store](https://apps.apple.com/app/tailscale/id1475387142) | Instala Tailscale → barra de menú → **Exit Node** → selecciona la Raspberry Pi |
 | 📺 **Fire TV Stick** | APK directo | Activa opciones de desarrollador → instala **Downloader** → descarga desde `pkgs.tailscale.com/stable` → escanea QR → activa **Exit Node** |
 | 📱 **Android TV / Google TV** | Google Play | Busca *Tailscale* → instala → activa **Exit Node** en la app |
-| 📺 **Smart TV Samsung / LG** | Sin app | Configura la Raspberry Pi como **gateway** en los ajustes de red del TV |
+| 📺 **Smart TV Samsung / LG** | Sin app | Usa un Chromecast/Fire TV con Tailscale o un router de viaje con Tailscale ([ver guía](GUIA_INSTALACION.md#smart-tv-samsung-o-lg-sin-tailscale)) |
 
 > 📖 Instrucciones detalladas para cada dispositivo en [GUIA_INSTALACION.md](GUIA_INSTALACION.md)
 
@@ -101,31 +97,20 @@ sudo dpkg -i /tmp/picoclaw.deb
 
 ## 🧰 Scripts disponibles
 
-### ⚙️ Instalación y mantenimiento
+Todos se ejecutan con `sudo bash scripts/<nombre>`.
 
 | Comando | Descripción |
 |:---|:---|
-| `bash scripts/install.sh` | ✅ Instalación completa: IP forwarding, Tailscale, PicoClaw y systemd |
-| `bash scripts/update.sh` | 🔄 Actualiza Tailscale y PicoClaw manualmente |
-| `bash scripts/uninstall.sh` | 🗑️ Desinstalación completa y limpieza del sistema |
+| `install.sh` | ✅ Instalación completa: reenvío, Tailscale firmado, rendimiento, cortafuegos y actualizaciones automáticas |
+| `status.sh` | 📋 Panel de estado: Tailscale, exit node, cortafuegos, SSH, bloqueador, temperatura, memoria y disco |
+| `bloqueador.sh instalar adguard\|pihole` | 🛡️ Bloqueo de anuncios por DNS (uno de los dos) |
+| `endurecer_ssh.sh` | 🔐 SSH solo con clave, comprobando antes que la tuya funciona |
+| `alertas.sh --configurar` | 📬 Avisos por Telegram si algo se cae |
+| `picoclaw.sh instalar` | 🤖 Asistente de estado por Telegram, sin acceso a la shell ([guía](GUIA_PICOCLAW_IA.md)) |
+| `update.sh` | 🔄 Aplica al momento las versiones fijadas en `versiones.conf` |
+| `uninstall.sh` | 🗑️ Deshace la instalación |
 
-### 📊 Monitorización
-
-| Comando | Descripción |
-|:---|:---|
-| `bash scripts/status.sh` | 📋 Panel de estado: servicios, red, RAM, disco, temperatura y ancho de banda |
-
-### 🌟 Funciones opcionales
-
-| Comando | Descripción |
-|:---|:---|
-| `bash scripts/setup_adguard.sh` | 🛡️ Instala AdGuard Home con integración Tailscale MagicDNS |
-| `bash scripts/auto_update.sh` | 🤖 Comprueba y aplica actualizaciones de PicoClaw por hash MD5 |
-| `bash scripts/auto_update.sh --instalar-cron` | ⏰ Programa la actualización automática diaria a las 04:00 |
-| `bash scripts/auto_update.sh --desinstalar-cron` | ❌ Elimina la tarea cron de actualización automática |
-| `bash scripts/alertas.sh` | 📬 Monitoriza servicios y envía alertas vía Telegram |
-
-> 🤖 Consulta [GUIA_PICOCLAW_IA.md](GUIA_PICOCLAW_IA.md) para configurar el asistente IA con Telegram paso a paso.
+> Opción `--simular` en `install.sh`: muestra lo que haría sin cambiar nada.
 
 ---
 
@@ -133,21 +118,20 @@ sudo dpkg -i /tmp/picoclaw.deb
 
 ```
 tailscale-exit-node-arm64/
-│
-├── 📁 config/
-│   └── picoclaw.service      # Servicio systemd (usuario sin privilegios)
-│
-├── 📁 scripts/
-│   ├── install.sh            # ✅ Instalador automático
-│   ├── uninstall.sh          # 🗑️ Desinstalación completa
-│   ├── update.sh             # 🔄 Actualizador manual
-│   ├── status.sh             # 📋 Panel de estado
-│   ├── setup_adguard.sh      # 🛡️ Instalador de AdGuard Home
-│   ├── auto_update.sh        # 🤖 Actualización automática con cron
-│   └── alertas.sh            # 📬 Alertas vía Telegram
-│
-├── 📄 GUIA_INSTALACION.md    # Guía paso a paso desde cero
-└── 📄 README.md
+├── versiones.conf            # Versiones fijadas y sus sumas SHA-256
+├── scripts/                  # Instalación, estado, bloqueador, alertas, PicoClaw, SSH
+│   └── lib/comun.sh          # Funciones compartidas (descarga verificada, cortafuegos…)
+├── config/
+│   ├── systemd/              # Servicios aislados (usuario propio, sin privilegios)
+│   └── plantillas/           # Configuración inicial de AdGuard, Pi-hole y PicoClaw
+├── pruebas/
+│   ├── laboratorio_dns/      # Comparación medida AdGuard vs Pi-hole
+│   ├── benchmark_pi.sh       # Mediciones en la Raspberry real
+│   └── velocidad_cliente.sh  # Velocidad con y sin exit node desde tu Mac/Linux
+├── tests/                    # Pruebas automáticas (bats + Python) que corren en GitHub Actions
+├── GUIA_INSTALACION.md
+├── GUIA_PICOCLAW_IA.md
+└── SECURITY.md
 ```
 
 ---
@@ -183,9 +167,19 @@ Al recuperarse la corriente, la Raspberry Pi arranca y los servicios se inician 
 
 ## 🔒 Seguridad
 
-- 🔐 El servicio `picoclaw` corre con `NoNewPrivileges` y `PrivateTmp` para limitar su superficie de ataque
-- 📦 El paquete `picoclaw` **no se incluye en el repositorio** y se descarga siempre desde la release oficial de GitHub
-- 🚫 Binarios, logs y archivos de configuración con credenciales excluidos en `.gitignore`
+- 🔏 **Descargas verificadas:** AdGuard, el instalador de Pi-hole y PicoClaw se comprueban con SHA-256; la clave de Tailscale, por su huella.
+- 🧱 **Cortafuegos:** entrada cerrada salvo SSH desde casa y Tailscale; los paneles web solo por Tailscale.
+- 👤 **Servicios aislados:** cada uno con su usuario y restricciones de systemd; ninguno corre como root.
+- 🤖 **PicoClaw sin shell:** solo lee un informe de estado y solo responde a tu ID de Telegram (tiene una vulnerabilidad de inyección de comandos sin parche).
+- 🔄 **Parches automáticos** del sistema y de Tailscale cada día.
+
+Detalles y modelo de amenazas en [SECURITY.md](SECURITY.md).
+
+---
+
+## 📊 ¿AdGuard o Pi-hole? ¿Frena la conexión?
+
+Medido con los programas reales en [pruebas/laboratorio_dns](pruebas/laboratorio_dns/RESULTADOS.md): bloquean lo mismo con la misma lista, responden desde caché en ~0,2 ms y añaden menos de 1 ms a una consulta nueva. **Ninguno frena la conexión**, porque solo intervienen en la consulta DNS. Se recomienda AdGuard porque cifra las consultas hacia fuera.
 
 ---
 
@@ -209,17 +203,19 @@ Al recuperarse la corriente, la Raspberry Pi arranca y los servicios se inician 
 
 ## 🗺️ Roadmap
 
-- [x] 🛡️ **Bloqueo de publicidad (DNS):** AdGuard Home con integración Tailscale MagicDNS
-- [x] 📊 **Monitorización de ancho de banda:** vnStat integrado en el panel de estado
-- [x] 🤖 **Actualizaciones automáticas:** Cron con detección de cambios por hash MD5
-- [x] 📬 **Sistema de alertas:** Notificaciones vía Telegram para caída de servicios, temperatura y disco
-
-> 💬 Las contribuciones (Pull Requests) con nuevas ideas son siempre bienvenidas.
+- [x] 🛡️ Bloqueo de anuncios: AdGuard Home o Pi-hole, con comparación medida
+- [x] 🔏 Descargas verificadas y versiones fijadas
+- [x] 🧱 Cortafuegos y SSH solo con clave
+- [x] 🚀 UDP GRO forwarding para más caudal con menos CPU
+- [x] 🔄 Actualizaciones automáticas firmadas (sustituye al antiguo cron sin verificar)
+- [x] 📬 Alertas por Telegram con el token protegido
+- [x] 🧪 Pruebas automáticas en GitHub Actions
+- [ ] 📈 Resultados de `benchmark_pi.sh` en una Raspberry Pi 4 y 5
 
 ---
 
 <div align="center">
 
-Hecho con dedicación para la comunidad · [GUIA_INSTALACION.md](GUIA_INSTALACION.md) · [Reportar un problema](https://github.com/RicardoEdreiraPenas/tailscale-exit-node-arm64/issues)
+[GUIA_INSTALACION.md](GUIA_INSTALACION.md) · [SECURITY.md](SECURITY.md) · [Reportar un problema](https://github.com/RicardoEdreiraPenas/tailscale-exit-node-arm64/issues)
 
 </div>

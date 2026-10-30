@@ -1,431 +1,254 @@
-# Guía de Instalación: Tailscale Exit Node + PicoClaw en Raspberry Pi
+# Guía de instalación: exit node de Tailscale en Raspberry Pi
 
-Guía completa paso a paso para configurar una Raspberry Pi (o Radxa ROCK 3C) como nodo de salida VPN doméstico.
+Guía paso a paso para convertir una Raspberry Pi (o Radxa ROCK 3C) en un nodo de
+salida doméstico: navegas desde cualquier sitio con la IP de tu casa, cifrado de
+extremo a extremo y sin abrir puertos en el router.
 
 ---
 
 ## Requisitos
 
-- Raspberry Pi 4, 5 o Radxa ROCK 3C
+- Raspberry Pi 4, 5 o Radxa ROCK 3C (64 bits)
 - Tarjeta microSD de 8 GB o más
-- Ordenador con Windows o macOS para preparar la microSD
-- Conexión a internet
+- Ordenador con Windows, macOS o Linux para preparar la microSD
+- Mejor por cable que por Wi-Fi: el exit node reenvía todo el tráfico y el cable es más estable y rápido
 
 ---
 
-## Parte 1 — Preparar la microSD (desde tu ordenador)
+## Parte 1. Preparar la microSD
 
-### Paso 1: Descargar Raspberry Pi Imager
-
-Descarga e instala la herramienta oficial desde:
-**https://www.raspberrypi.com/software/**
-
-### Paso 2: Grabar el sistema operativo
-
-1. Abre **Raspberry Pi Imager**
-2. **Elegir Dispositivo:** selecciona tu modelo (Raspberry Pi 4 o 5)
-3. **Elegir Sistema Operativo:**
-   - Ve a `Raspberry Pi OS (Other)`
-   - Selecciona **Raspberry Pi OS Lite (64-bit)**
-
-   > **Importante:** debe ser 64-bit (ARM64). La versión Lite no tiene escritorio, lo que ahorra recursos para el túnel.
-
-4. **Elegir Almacenamiento:** selecciona tu tarjeta microSD
-5. Haz clic en **Editar ajustes** (icono del engranaje) y configura:
-   - **SSH:** habilitar con autenticación por contraseña
-   - **Usuario:** elige un nombre de usuario y una contraseña segura (recuérdalo, lo usarás para conectarte por SSH)
-   - **Wi-Fi:** introduce tu SSID y contraseña
-   - **Zona horaria:** ajusta a tu región
-6. Guarda y haz clic en **Escribir**. Espera a que termine.
+1. Descarga **Raspberry Pi Imager** desde https://www.raspberrypi.com/software/
+2. **Dispositivo:** tu modelo. **Sistema:** `Raspberry Pi OS (Other)` → **Raspberry Pi OS Lite (64-bit)**.
+3. **Almacenamiento:** tu microSD.
+4. En **Editar ajustes**:
+   - **Usuario:** elige un nombre (no uses `pi`) y una contraseña larga.
+   - **SSH:** actívalo y elige **"Permitir solo autenticación de clave pública"**. Pega tu clave pública
+     (en Mac/Linux: `cat ~/.ssh/id_ed25519.pub`; si no tienes, créala con `ssh-keygen -t ed25519`).
+     Si prefieres empezar con contraseña, más adelante `scripts/endurecer_ssh.sh` lo cambia por ti.
+   - **Wi-Fi** (si no usas cable) y **zona horaria**.
+5. **Escribir** y esperar.
 
 ---
 
-## Parte 2 — Primer arranque y conexión SSH
-
-### Paso 3: Arrancar la Raspberry Pi
-
-1. Saca la microSD del ordenador e insértala en la Raspberry Pi
-2. Conecta la alimentación y espera ~2 minutos a que arranque
-
-### Paso 4: Conectarse por SSH
-
-Desde la terminal de tu ordenador (PowerShell en Windows, Terminal en Mac):
+## Parte 2. Primer arranque
 
 ```bash
-ssh pi@raspberrypi.local
-```
-
-> Si `raspberrypi.local` no responde, busca la IP en tu router y conéctate así:
-> ```bash
-> ssh pi@192.168.1.XXX
-> ```
-
-### Paso 5: Actualizar el sistema e instalar Git
-
-Una vez dentro de la Raspberry Pi, actualiza los paquetes e instala Git:
-
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install git -y
-```
-
----
-
-## Parte 3 — Instalación base
-
-### Paso 6: Clonar el repositorio
-
-```bash
+ssh TU_USUARIO@raspberrypi.local          # o la IP que te dé el router
+sudo apt update && sudo apt full-upgrade -y
+sudo apt install -y git
 git clone https://github.com/RicardoEdreiraPenas/tailscale-exit-node-arm64.git
 cd tailscale-exit-node-arm64
 ```
 
-### Paso 7: Ejecutar el script de instalación
+---
+
+## Parte 3. Instalación
 
 ```bash
-bash scripts/install.sh
+sudo bash scripts/install.sh --bloqueador=adguard
 ```
 
-El script realiza automáticamente:
-- Habilita el reenvío de paquetes IP (necesario para el exit node)
-- Instala Tailscale
-- Descarga e instala PicoClaw desde su paquete `.deb` oficial (ARM64)
-- Crea un usuario dedicado sin privilegios para el servicio
-- Instala y activa `picoclaw` como servicio systemd
+Opciones: `--bloqueador=pihole` o `--bloqueador=ninguno`, `--con-picoclaw` (asistente de Telegram),
+`--simular` (muestra lo que haría sin cambiar nada).
 
-### Paso 8: Activar el nodo de salida en Tailscale
+El instalador:
+
+- Activa el reenvío de paquetes IPv4 e IPv6.
+- Instala Tailscale desde su repositorio oficial, comprobando la huella de la clave de firma.
+- Activa UDP GRO forwarding en la interfaz de salida, que es lo que recomienda Tailscale
+  para que un exit node en Linux use menos CPU y vaya más rápido.
+- Activa las actualizaciones de seguridad automáticas, incluidas las de Tailscale.
+- Configura el cortafuegos: cierra todo lo que entra, salvo SSH desde tu red local, el tráfico
+  de Tailscale y el puerto de conexiones directas de Tailscale (41641/udp).
+- Si lo pides, instala el bloqueador de anuncios con la descarga verificada.
+- Detecta restos de versiones anteriores del proyecto y los desactiva.
+
+### Activar el exit node
 
 ```bash
 sudo tailscale up --advertise-exit-node
 ```
 
-Abre el enlace que aparece en la terminal para autenticar la placa en tu cuenta de Tailscale.
+Abre el enlace que aparece para añadir la placa a tu cuenta. Después, en
+https://login.tailscale.com/admin/machines, abre la placa → **Edit route settings** →
+marca **Use as exit node**.
 
-> **Nota:** Si ya habías ejecutado este comando antes con rutas adicionales (`--advertise-routes`), Tailscale te pedirá que incluyas todos los flags anteriores. Usa el comando exacto que te sugiera el error, por ejemplo:
-> ```bash
-> sudo tailscale up --advertise-exit-node --advertise-routes=192.168.1.100/32
-> ```
+> Si ya habías usado `tailscale up` con otras opciones, Tailscale te pedirá repetirlas.
+> Copia el comando exacto que te sugiere el error.
 
-### Paso 9: Aprobar el nodo en el panel de Tailscale
+### Comprobar
 
-1. Ve a **https://login.tailscale.com/admin/machines**
-2. Busca tu Raspberry Pi en la lista
-3. Haz clic en `...` > **Edit route settings**
-4. Activa **Use as exit node**
+```bash
+sudo bash scripts/status.sh
+```
+
+Todo debe salir en verde. Si algo falla, el propio panel indica el comando para arreglarlo.
 
 ---
 
-## Parte 4 — Verificación
-
-### Comprobar el estado de todo el sistema de un vistazo
-
-```bash
-bash scripts/status.sh
-```
-
-Muestra el estado de IP forwarding, Tailscale, PicoClaw, AdGuard Home, ancho de banda, RAM, disco y temperatura.
-
-### Verificar Tailscale
-
-```bash
-sudo tailscale status
-```
-
-Debes ver tu placa listada con la etiqueta `exit node`.
-
-### Verificar PicoClaw
-
-```bash
-sudo systemctl status picoclaw.service
-```
-
-Debe mostrar `active (running)`. Si hay error:
-
-```bash
-sudo journalctl -u picoclaw.service -n 50
-```
-
-### Verificar el reenvío IP
-
-```bash
-sysctl net.ipv4.ip_forward        # Debe devolver: 1
-sysctl net.ipv6.conf.all.forwarding  # Debe devolver: 1
-```
-
----
-
-## Parte 5 — Funciones opcionales
-
-### Bloqueo de publicidad con AdGuard Home
-
-Instala AdGuard Home y conéctalo a Tailscale MagicDNS para bloquear anuncios en todos tus dispositivos:
-
-```bash
-bash scripts/setup_adguard.sh
-```
-
-El script instala AdGuard Home y muestra los pasos para configurarlo con Tailscale. El panel web queda disponible en `http://<IP-de-la-placa>:3000`.
-
----
-
-### Actualizaciones automáticas de PicoClaw
-
-Activa una tarea cron que comprueba cada noche si hay una nueva versión y actualiza solo si hay cambios:
-
-```bash
-# Instalar (se ejecuta todos los días a las 04:00)
-bash scripts/auto_update.sh --instalar-cron
-
-# Desinstalar
-bash scripts/auto_update.sh --desinstalar-cron
-```
-
-Los logs quedan en `/var/log/picoclaw_update.log`.
-
----
-
-### Alertas vía Telegram
-
-Recibe una notificación en tu móvil si PicoClaw o Tailscale caen, si se va la luz o si el disco está lleno.
-
-**Paso 1:** Configura tu bot de Telegram:
-1. Habla con **@BotFather** en Telegram y crea un bot → guarda el `TOKEN`
-2. Habla con **@userinfobot** → guarda tu `CHAT_ID`
-
-**Paso 2:** Edita el script con tus datos:
-
-```bash
-nano scripts/alertas.sh
-```
-
-Rellena las variables al inicio del archivo:
-```bash
-TELEGRAM_TOKEN="tu_token_aqui"
-TELEGRAM_CHAT_ID="tu_chat_id_aqui"
-```
-
-**Paso 3:** Añade el script al cron para que se ejecute cada 5 minutos:
-
-```bash
-crontab -e
-```
-
-Añade esta línea al final (ajusta la ruta a tu directorio real):
-```
-*/5 * * * * /bin/bash /home/TU_USUARIO/tailscale-exit-node-arm64/scripts/alertas.sh
-```
-
-Por ejemplo, si tu usuario es `ricardo`:
-```
-*/5 * * * * /bin/bash /home/ricardo/tailscale-exit-node-arm64/scripts/alertas.sh
-```
-
----
-
-## Parte 6 — Mantenimiento
-
-### Actualizar todos los componentes manualmente
-
-```bash
-bash scripts/update.sh
-```
-
-### Reiniciar servicios
-
-```bash
-sudo systemctl restart tailscaled
-sudo systemctl restart picoclaw.service
-```
-
-### Ver logs en tiempo real
-
-```bash
-# Logs de PicoClaw
-sudo journalctl -u picoclaw.service -f
-
-# Logs de Tailscale
-sudo journalctl -u tailscaled -f
-```
-
-### Desinstalar todo
-
-```bash
-bash scripts/uninstall.sh
-```
-
----
-
-## Parte 7 — Prueba definitiva desde el móvil
-
-Esta prueba simula que estás de viaje o en otra casa y confirma que el túnel funciona correctamente.
-
-### Paso 1: Preparación
-
-**Desconecta el Wi-Fi de tu móvil** y quédate solo con datos móviles (4G/5G). Si estás en el mismo Wi-Fi que la Raspberry Pi, la prueba no será real.
-
-### Paso 2: Conectar en la app
-
-1. Descarga **Tailscale** desde la App Store o Google Play
-2. Inicia sesión con la misma cuenta que usaste en la Raspberry Pi
-3. Verás tus dispositivos: tu Mac, tu móvil y `pico-r-node`
-4. Activa el interruptor principal (te pedirá permiso para añadir una VPN — acepta)
-
-### Paso 3: Activar el Exit Node
-
-1. Toca el menú (tres puntos o ajustes, según iOS/Android)
-2. Selecciona **Use exit node**
-3. Elige **pico-r-node** de la lista
-4. Verás el mensaje: *Routing all traffic through pico-r-node*
-
-### Paso 4: Verificar que funciona
-
-Abre el navegador del móvil y busca **"cuál es mi IP"** o ve directamente a [whatismyip.com](https://whatismyip.com).
-
-**Resultado esperado:** el ISP que aparece debe ser el de tu casa (Movistar, Digi, Vodafone, etc.), no el de tu compañía móvil. Si es así, todo el tráfico viaja encriptado hasta la Raspberry Pi y sale a internet desde tu IP doméstica.
-
----
-
-## Parte 8 — Conectar tus dispositivos al Exit Node
-
-Una vez la Raspberry Pi está configurada, conecta tus dispositivos instalando Tailscale en cada uno y seleccionando tu placa como nodo de salida.
-
----
-
-### Windows (PC)
-
-1. Descarga e instala Tailscale desde **https://tailscale.com/download/windows**
-2. Inicia sesión con la misma cuenta que usaste en la Raspberry Pi
-3. Haz clic en el icono de Tailscale en la barra de tareas (esquina inferior derecha)
-4. Ve a **Exit Node** > selecciona tu Raspberry Pi de la lista
-5. Listo. Todo el tráfico sale por tu IP doméstica.
-
-> Para verificar que funciona, abre **https://whatismyip.com** — debe mostrar la IP de tu casa.
-
----
-
-### Mac
-
-1. Descarga e instala Tailscale desde la **App Store** (busca "Tailscale") o desde **https://tailscale.com/download/mac**
-2. Inicia sesión con tu cuenta de Tailscale
-3. Haz clic en el icono de Tailscale en la barra de menú (parte superior derecha)
-4. Ve a **Exit Node** > selecciona tu Raspberry Pi
-5. Listo.
-
-> Para verificar, abre **https://whatismyip.com** en Safari o Chrome.
-
----
-
-### Fire TV Stick (Amazon)
-
-Tailscale **no está disponible en la tienda de Amazon**, por lo que la instalación se hace mediante descarga directa del APK oficial.
-
-### Requisitos previos
-
-1. **Activar opciones de desarrollador:** Configuración > Mi Fire TV > Acerca de > pulsa 7 veces sobre el nombre del dispositivo
-2. **Activar "Apps de origen desconocido"** dentro del menú Opciones para desarrolladores
-3. **Instalar "Downloader"** desde la tienda oficial del Fire TV
-
-### Instalación paso a paso
-
-1. Abre **Downloader** y concédele permisos de almacenamiento si los solicita
-2. Selecciona la barra de URL e introduce exactamente:
+## Parte 4. Seguridad recomendada (5 minutos)
+
+1. **SSH solo con clave** (si no lo elegiste en el paso 1):
+   ```bash
+   sudo bash scripts/endurecer_ssh.sh
    ```
-   pkgs.tailscale.com/stable
-   ```
-3. Pulsa **Go**. Se cargará una página de texto plano con el directorio oficial de paquetes
-4. Baja con los botones del mando hasta la sección **"Universal Android application package (APK)"**
-5. Selecciona el enlace de la versión más reciente (ej. `tailscale-android-universal-1.96.4.apk`)
-6. La descarga comenzará al instante. Cuando termine, pulsa **Instalar**
-7. (Recomendado) Pulsa **Delete** en Downloader para borrar el APK y liberar espacio
+   Comprueba que tu clave funciona antes de tocar nada, para que no te quedes fuera.
 
-### Configuración final
+2. **Caducidad de la clave de la máquina.** Por defecto, Tailscale pide volver a iniciar sesión
+   en cada máquina cada 180 días. Es más seguro dejarlo así: te llegará un correo antes. Si
+   prefieres que el exit node no caduque nunca, en el panel de la máquina elige
+   **Disable key expiry**, sabiendo que si alguien roba la tarjeta tendrá acceso hasta que la
+   borres del panel.
 
-1. Abre la app **Tailscale** recién instalada
-2. Acepta los permisos de conexión VPN que solicite Fire OS
-3. Pulsa **Get Started** — aparecerá un código QR en pantalla
-4. Escanea el QR con tu móvil e inicia sesión con la misma cuenta que administra tu red Tailscale
-5. Una vez conectado, activa **Use exit node** > selecciona tu Raspberry Pi
-6. Listo. El streaming saldrá por tu IP doméstica.
+3. **Quién puede usar el exit node.** Si compartes tu red de Tailscale con otras personas, limita
+   en las ACL (https://login.tailscale.com/admin/acls) quién puede usar `autogroup:internet`.
 
 ---
 
-### Android TV / Google TV
-
-1. En el Google Play Store de tu TV, busca **Tailscale** e instálala
-2. Inicia sesión con tu cuenta
-3. En la app, activa la conexión y selecciona tu Raspberry Pi como **Exit Node**
-4. Listo.
-
-> Compatible con: Chromecast con Google TV, NVIDIA Shield, televisores Sony, TCL, Hisense con Android TV, etc.
-
----
-
-### Smart TV (sin Android TV — Samsung Tizen, LG webOS)
-
-Los Smart TV de Samsung y LG **no tienen tienda de apps compatible con Tailscale**. La solución es configurar la Raspberry Pi como **router de salida** para toda la red local o usar un router con Tailscale.
-
-**Opción recomendada — Configurar la Raspberry Pi como gateway:**
-
-En la Raspberry Pi, activa el enrutamiento para tu red local:
+## Parte 5. Bloqueador de anuncios
 
 ```bash
-# Anuncia el rango de tu red local (ajusta según tu router, normalmente 192.168.1.0/24)
-sudo tailscale up --advertise-exit-node --advertise-routes=192.168.1.0/24
+sudo bash scripts/bloqueador.sh instalar adguard     # o: pihole
 ```
 
-Luego en el panel de Tailscale aprueba también las rutas:
-1. Ve a **https://login.tailscale.com/admin/machines**
-2. Tu Raspberry Pi > `...` > **Edit route settings**
-3. Activa tanto **Use as exit node** como la ruta `192.168.1.0/24`
+Solo puede haber uno: los dos usan el puerto 53. Al terminar, el script muestra la dirección del
+panel (solo accesible por Tailscale, puerto 8080) y la contraseña. Guárdala en tu gestor de
+contraseñas.
 
-Ahora en tu Smart TV (Samsung/LG):
-1. Ve a **Configuración de red** del TV
-2. Cambia la **puerta de enlace (gateway)** manualmente a la IP de tu Raspberry Pi
-3. El TV usará la Raspberry Pi como salida de red sin necesitar instalar nada.
+Para que tus dispositivos lo usen: en https://login.tailscale.com/admin/dns →
+**Add nameserver** → **Custom** → la IP de Tailscale de la placa, y activa **Override DNS servers**.
+
+> Si la placa se apaga, los dispositivos conectados a Tailscale se quedan sin DNS hasta que
+> vuelva o la quites de ahí.
+
+¿Cuál elegir? En `pruebas/laboratorio_dns/RESULTADOS.md` está la comparación medida: en velocidad
+empatan y ninguno frena la conexión. AdGuard cifra las consultas hacia fuera; por eso es el
+recomendado.
 
 ---
 
-### Solución de problemas frecuentes
+## Parte 6. Alertas por Telegram (opcional)
+
+```bash
+sudo bash scripts/alertas.sh --configurar
+```
+
+Te pide el token del bot (de @BotFather) y tu ID numérico (de @userinfobot), envía un mensaje de
+prueba y activa una comprobación cada 5 minutos. Avisa si se cae Tailscale o el bloqueador, si se
+llena el disco, si sube la temperatura o si hubo un corte de internet. El token queda en
+`/etc/exitnode/alertas.env`, legible solo por root.
+
+---
+
+## Parte 7. Asistente PicoClaw (opcional)
+
+Ver [GUIA_PICOCLAW_IA.md](GUIA_PICOCLAW_IA.md). Por seguridad, el asistente solo lee un informe de
+estado y no puede ejecutar comandos.
+
+---
+
+## Parte 8. Mantenimiento
+
+```bash
+git pull && sudo bash scripts/update.sh   # actualiza todo a las versiones fijadas del repositorio
+sudo bash scripts/status.sh               # panel de estado
+sudo journalctl -u tailscaled -f          # registro de Tailscale
+sudo bash scripts/uninstall.sh            # deshace la instalación (pregunta antes de quitar Tailscale)
+```
+
+El sistema y Tailscale ya se actualizan solos cada día. `update.sh` sirve para aplicar al momento
+las versiones nuevas del bloqueador o de PicoClaw que se fijen en `versiones.conf`.
+
+---
+
+## Parte 9. Prueba desde el móvil
+
+1. Quita el Wi-Fi del móvil y quédate con datos móviles.
+2. En la app de Tailscale, activa la VPN → **Use exit node** → tu placa.
+3. Busca "cuál es mi IP". Debe salir el operador de tu casa, no el del móvil.
+
+Para medir la velocidad con y sin exit node desde un Mac o Linux:
+
+```bash
+bash pruebas/velocidad_cliente.sh NOMBRE_DE_LA_PLACA
+```
+
+Y en la placa, la latencia DNS, el bloqueo y la calidad de la conexión de Tailscale:
+
+```bash
+sudo bash pruebas/benchmark_pi.sh
+```
+
+---
+
+## Parte 10. Conectar tus dispositivos
+
+| Dispositivo | Cómo |
+|---|---|
+| Windows | Instala Tailscale (https://tailscale.com/download/windows) → icono de la barra → **Exit Node** → tu placa |
+| Mac | Tailscale desde la App Store → barra de menú → **Exit Node** → tu placa |
+| iPhone / Android | App de Tailscale → **Use exit node** → tu placa |
+| Android TV / Google TV | Tailscale desde Google Play → activa **Exit Node** |
+| Fire TV Stick | Ver abajo |
+| Smart TV Samsung o LG | Ver abajo |
+
+### Fire TV Stick
+
+Tailscale no está en la tienda de Amazon; se instala su APK oficial.
+
+1. Configuración → Mi Fire TV → Acerca de → pulsa 7 veces el nombre del dispositivo
+   (activa las opciones de desarrollador) → permite **apps de origen desconocido**.
+2. Instala **Downloader** desde la tienda del Fire TV.
+3. En Downloader escribe `https://pkgs.tailscale.com/stable/` (con `https`), baja hasta
+   **Universal Android application package (APK)** y descarga la versión más reciente.
+4. Instala, borra el APK, abre Tailscale, escanea el QR con el móvil y elige tu placa como exit node.
+
+### Smart TV Samsung o LG (sin Tailscale)
+
+Estos televisores no pueden instalar Tailscale. La guía anterior proponía poner la Raspberry como
+puerta de enlace del televisor, pero eso no sirve: si el televisor está en tu casa ya sale con tu
+IP, y si está en otra casa no puede llegar a la Raspberry sin Tailscale. Además, anunciar toda tu
+red local (`--advertise-routes=192.168.1.0/24`) expone todos los aparatos de casa a cualquier
+dispositivo de tu cuenta de Tailscale.
+
+Opciones que sí funcionan cuando el televisor está fuera de casa:
+
+- **Un Chromecast con Google TV o un Fire TV Stick** conectado al televisor, con Tailscale. Es lo
+  más barato y sencillo.
+- **Un router de viaje con Tailscale** (por ejemplo GL.iNet) en la otra casa, configurado para
+  usar tu placa como exit node. Todo lo que se conecte a ese router saldrá por tu casa.
+
+---
+
+## Solución de problemas
 
 | Problema | Solución |
 |---|---|
-| `raspberrypi.local` no responde | Busca la IP en tu router o usa la app **Fing** en el móvil |
-| El exit node no aparece en la lista | Asegúrate de haberlo aprobado en **https://login.tailscale.com/admin/machines** |
-| La IP sigue siendo la del país remoto | Desconecta y vuelve a conectar el exit node en la app Tailscale |
-| Fire TV no encuentra Tailscale en la tienda | Activa "Fuentes desconocidas" y descarga el APK desde tailscale.com |
-| Smart TV Samsung/LG no puede instalar apps | Usa la opción de gateway manual explicada en la sección anterior |
-| PicoClaw no arranca | Ejecuta `sudo journalctl -u picoclaw.service -n 50` para ver el error |
-| Error `Bad message` al instalar Tailscale | La tarjeta SD tiene un error de escritura. Ejecuta los comandos de reparación de abajo |
-| Error `cannot append to alternatives.log` | Mismo problema de SD. Ver reparación abajo |
-| Error `changing settings via 'tailscale up' requires mentioning all non-default flags` | Copia el comando exacto que sugiere el error e inclúyelo completo con todos los flags |
+| `raspberrypi.local` no responde | Busca la IP en tu router o con la app Fing |
+| El exit node no aparece | Apruébalo en https://login.tailscale.com/admin/machines → Edit route settings |
+| Va lento y `status.sh` dice "por relé" | La conexión usa un servidor intermedio. Comprueba que tu router no bloquea UDP saliente; el cortafuegos de la placa ya permite 41641/udp |
+| `status.sh` avisa de UDP GRO | Tu kernel es anterior al 6.2. Funciona igual; con `sudo apt full-upgrade` y reinicio suele resolverse |
+| Los dispositivos se quedan sin internet | Probablemente la placa está apagada y es el DNS de Tailscale. Quítala de "Nameservers" o enciéndela |
+| `changing settings via 'tailscale up' requires mentioning all non-default flags` | Copia el comando completo que sugiere el error |
+| Error `Bad message` o `cannot append to alternatives.log` | La microSD tiene errores de escritura. Ver abajo |
 
-**Reparar errores de escritura en la tarjeta SD:**
+**Reparar errores de escritura en la microSD:**
 
 ```bash
-# 1. Forzar comprobación del sistema de archivos en el próximo arranque
-sudo touch /forcefsck
-sudo reboot
-
-# 2. Tras reiniciar, reparar el log corrupto y los paquetes rotos
-sudo rm /var/log/alternatives.log
-sudo touch /var/log/alternatives.log
+sudo touch /forcefsck && sudo reboot
+# tras reiniciar:
 sudo dpkg --configure -a
 sudo apt --fix-broken install -y
-
-# 3. Volver a lanzar el instalador
-bash scripts/install.sh
+sudo bash scripts/install.sh
 ```
 
-> Si el error persiste tras el reinicio, la tarjeta SD puede estar fallando. Considera grabar una imagen nueva.
+Si el error vuelve, la tarjeta está fallando: graba una nueva.
 
 ---
 
-## Parte 9 — Resiliencia
+## Resiliencia
 
-### IP dinámica
-
-Tailscale usa una red mesh basada en WireGuard. Si tu operador cambia tu IP pública, Tailscale renegocia la conexión automáticamente. No necesitas configurar puertos ni DDNS.
-
-### Cortes de luz
-
-Al volver la corriente, la Raspberry Pi arranca sola. Los servicios `tailscaled` y `picoclaw` están configurados en systemd para iniciarse automáticamente. El sistema queda operativo sin intervención manual.
+- **IP dinámica:** Tailscale renegocia la conexión sola cuando tu operador cambia tu IP. No hace
+  falta abrir puertos ni configurar DDNS.
+- **Cortes de luz:** al volver la corriente, la placa arranca y systemd levanta todos los servicios.
+  Si tienes las alertas activas, te llega un aviso del corte de internet cuando vuelve la conexión.
