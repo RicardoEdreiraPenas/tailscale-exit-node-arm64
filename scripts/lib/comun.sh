@@ -50,7 +50,7 @@ ejecutar() {
 
 requiere_root() {
     if [[ "${EUID:-$(id -u)}" -ne 0 && "$SIMULAR" != "1" && -z "$RAIZ" ]]; then
-        local IFS=' '; morir "Ejecuta este script con sudo: sudo bash $0 ${*:-}"
+        morir "Ejecuta este script con sudo: sudo bash $0"
     fi
 }
 

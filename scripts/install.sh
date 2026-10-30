@@ -34,7 +34,7 @@ case "$BLOQUEADOR_ELEGIDO" in
     *) morir "Bloqueador no válido: $BLOQUEADOR_ELEGIDO. Usa adguard, pihole o ninguno." ;;
 esac
 
-requiere_root "$@"
+requiere_root
 cargar_versiones
 
 # ---------------------------------------------------------------------------

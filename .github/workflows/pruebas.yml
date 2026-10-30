@@ -18,7 +18,10 @@ jobs:
           persist-credentials: false
 
       - name: Herramientas
-        run: sudo apt-get update -q && sudo apt-get install -y -q bats shellcheck jq dnsutils
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q bats jq dnsutils
+          # La misma versión de shellcheck con la que se desarrolla (la de apt es más antigua).
+          python3 -m pip install --user --break-system-packages shellcheck-py==0.11.0.1
 
       - name: Análisis estático (shellcheck)
         run: shellcheck -x -S style scripts/*.sh scripts/lib/comun.sh pruebas/*.sh
