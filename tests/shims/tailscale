@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+printf 'tailscale %s\n' "$*" >> "${REGISTRO:?}"
+case "$*" in
+  "status --json") cat "${FALSO_TS_JSON:?}" ;;
+  "debug prefs") echo '{"AdvertiseRoutes": ["0.0.0.0/0", "::/0"]}' ;;
+  "version") echo "1.90.0" ;;
+  "ip -4") echo "100.101.102.103" ;;
+  "status") echo "100.1.1.1 portatil ricardo@ linux active; direct 1.2.3.4:41641" ;;
+esac

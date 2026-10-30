@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Registra los argumentos (para comprobar que no se filtran secretos) y simula respuestas.
+printf 'curl %s\n' "$*" >> "${REGISTRO:?}"
+if [[ " $* " == *" --config - "* ]]; then cat >> "${REGISTRO}.stdin"; fi
+salida=""
+prev=""
+for a in "$@"; do [[ "$prev" == "-o" ]] && salida="$a"; prev="$a"; done
+if [[ -n "$salida" ]]; then
+  if [[ -n "${FALSA_DESCARGA:-}" ]]; then cp "$FALSA_DESCARGA" "$salida"; else echo "contenido" > "$salida"; fi
+fi
+exit "${CURL_RC:-0}"
