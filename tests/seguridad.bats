@@ -124,3 +124,8 @@ EOF
     # No genera una contraseña nueva que sustituya a la que ya tenía.
     nunca grep -q "Contraseña:" <<<"$output"
 }
+
+@test "el informe de PicoClaw no lo escribe root en la carpeta del usuario picoclaw" {
+    grep -q 'runuser -u picoclaw' "$REPO/config/systemd/picoclaw-estado.service"
+    nunca grep -qE "> /var/lib/picoclaw/workspace/[^\"]*; chown" "$REPO/config/systemd/picoclaw-estado.service"
+}

@@ -3,9 +3,10 @@ Description=PicoClaw: genera el informe de estado que lee el asistente
 
 [Service]
 Type=oneshot
-# Corre como root para poder consultar Tailscale y el cortafuegos, pero solo escribe un fichero de texto.
-ExecStart=/bin/sh -c '/usr/local/lib/exitnode/scripts/status.sh --texto > /var/lib/picoclaw/workspace/estado.txt.tmp 2>&1; chown picoclaw:picoclaw /var/lib/picoclaw/workspace/estado.txt.tmp; chmod 0640 /var/lib/picoclaw/workspace/estado.txt.tmp; mv -f /var/lib/picoclaw/workspace/estado.txt.tmp /var/lib/picoclaw/workspace/estado.txt'
-NoNewPrivileges=yes
+# El informe se genera como root (para consultar Tailscale y el cortafuegos), pero el fichero
+# lo escribe el usuario picoclaw: si ese usuario estuviera comprometido y dejara un enlace
+# simbólico en su carpeta, root no escribiría a través de él.
+ExecStart=/bin/sh -c '/usr/local/lib/exitnode/scripts/status.sh --texto 2>&1 | /usr/sbin/runuser -u picoclaw -- /bin/sh -c "umask 027; cat > /var/lib/picoclaw/workspace/.estado.tmp && mv -f /var/lib/picoclaw/workspace/.estado.tmp /var/lib/picoclaw/workspace/estado.txt"'
 PrivateTmp=yes
 ProtectHome=yes
 ProtectSystem=full
