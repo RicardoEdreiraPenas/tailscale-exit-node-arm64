@@ -1,119 +1,123 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Alertas por Telegram cuando algo falla en el exit node.
+#
+# Uso:
+#   sudo bash scripts/alertas.sh --configurar   guarda el token y el chat, envía una prueba y activa el temporizador
+#   sudo bash scripts/alertas.sh --desactivar
+#   alertas.sh --comprobar                      lo ejecuta systemd cada 5 minutos (no hace falta lanzarlo a mano)
+#
+# El token se guarda en /etc/exitnode/alertas.env (solo legible por root). systemd lo
+# lee al arrancar la comprobación, que corre con un usuario temporal sin privilegios.
 
-# ==============================================================================
-# Sistema de Alertas vía Telegram
-# Monitoriza los servicios y envía notificaciones si algo falla
-# Uso como cron: */5 * * * * /bin/bash /ruta/alertas.sh
-# ==============================================================================
+source "$(dirname "${BASH_SOURCE[0]}")/lib/comun.sh"
 
-# --- CONFIGURACIÓN ---
-# Rellena estos valores con los datos de tu bot de Telegram
-# Guía rápida:
-#   1. Habla con @BotFather en Telegram y crea un bot → obtendrás el TOKEN
-#   2. Habla con @userinfobot → obtendrás tu CHAT_ID
-TELEGRAM_TOKEN=""
-TELEGRAM_CHAT_ID=""
+MODO="${1:---comprobar}"
+ENV_FILE="$DIR_CONF/alertas.env"
+ESTADO="${STATE_DIRECTORY:-/var/lib/exitnode-alertas}/activas"
 
-# Archivo para evitar enviar la misma alerta repetidamente
-STATE_FILE="/tmp/alertas_estado.txt"
-
-# --- FUNCIONES ---
+# Envía un mensaje sin poner el token en la línea de comandos (no aparece en 'ps').
 enviar_telegram() {
-    local mensaje="$1"
-    if [ -z "$TELEGRAM_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
-        echo "Advertencia: TELEGRAM_TOKEN o TELEGRAM_CHAT_ID no configurados."
-        return 1
-    fi
-    curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
-        -d chat_id="$TELEGRAM_CHAT_ID" \
-        -d parse_mode="Markdown" \
-        -d text="$mensaje" > /dev/null
+    local texto="$1"
+    [[ -n "${TELEGRAM_TOKEN:-}" && -n "${TELEGRAM_CHAT_ID:-}" ]] || { error "Faltan TELEGRAM_TOKEN o TELEGRAM_CHAT_ID"; return 1; }
+    printf 'url = "https://api.telegram.org/bot%s/sendMessage"\n' "$TELEGRAM_TOKEN" \
+        | curl --fail --silent --show-error --max-time 15 --proto '=https' --config - \
+               --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+               --data-urlencode "text=${texto}" >/dev/null
 }
 
+# Avisa una sola vez por problema y otra vez cuando se resuelve.
 alerta() {
-    local clave="$1"
-    local mensaje="$2"
-    # Solo envía la alerta si no se ha enviado ya (evita spam)
-    if ! grep -qx "$clave" "$STATE_FILE" 2>/dev/null; then
-        enviar_telegram "$mensaje"
-        echo "$clave" >> "$STATE_FILE"
+    local clave="$1" texto="$2"
+    grep -qxF "$clave" "$ESTADO" 2>/dev/null && return 0
+    enviar_telegram "🔴 $(hostname): $texto" && echo "$clave" >>"$ESTADO"
+}
+resuelto() {
+    local clave="$1" texto="$2"
+    grep -qxF "$clave" "$ESTADO" 2>/dev/null || return 0
+    if enviar_telegram "✅ $(hostname): $texto"; then
+        grep -vxF "$clave" "$ESTADO" >"$ESTADO.tmp" || true
+        mv -f "$ESTADO.tmp" "$ESTADO"
     fi
 }
-
-recuperacion() {
-    local clave="$1"
-    local mensaje="$2"
-    # Solo notifica recuperación si antes había una alerta activa
-    if grep -qx "$clave" "$STATE_FILE" 2>/dev/null; then
-        enviar_telegram "$mensaje"
-        sed -i "/$clave/d" "$STATE_FILE"
-    fi
-}
-
-HOSTNAME=$(hostname)
-
-# --- COMPROBACIONES ---
-
-# 1. Servicio PicoClaw
-if ! systemctl is-active --quiet picoclaw.service; then
-    alerta "picoclaw_caido" \
-        "🔴 *ALERTA — $HOSTNAME*
-Servicio \`picoclaw\` caído o reiniciado.
-\`sudo systemctl status picoclaw.service\`"
-else
-    recuperacion "picoclaw_caido" \
-        "✅ *RECUPERADO — $HOSTNAME*
-Servicio \`picoclaw\` vuelve a estar activo."
-fi
-
-# 2. Servicio Tailscale
-if ! systemctl is-active --quiet tailscaled; then
-    alerta "tailscale_caido" \
-        "🔴 *ALERTA — $HOSTNAME*
-Servicio \`tailscaled\` caído.
-\`sudo systemctl status tailscaled\`"
-else
-    recuperacion "tailscale_caido" \
-        "✅ *RECUPERADO — $HOSTNAME*
-Servicio \`tailscaled\` vuelve a estar activo."
-fi
-
-# 3. Conectividad a internet
-if ! ping -c 1 -W 5 8.8.8.8 &>/dev/null; then
-    alerta "sin_internet" \
-        "🌐 *ALERTA — $HOSTNAME*
-Sin conexión a internet detectada."
-else
-    recuperacion "sin_internet" \
-        "✅ *RECUPERADO — $HOSTNAME*
-Conexión a internet restaurada."
-fi
-
-# 4. Uso de disco > 90%
-USO_DISCO=$(df / | awk 'NR==2 {print $5}' | tr -d '%')
-if [ "$USO_DISCO" -gt 90 ]; then
-    alerta "disco_lleno" \
-        "💾 *ALERTA — $HOSTNAME*
-Disco al ${USO_DISCO}% de capacidad.
-Libera espacio para evitar fallos."
-else
-    recuperacion "disco_lleno" \
-        "✅ *RECUPERADO — $HOSTNAME*
-Uso de disco normalizado: ${USO_DISCO}%."
-fi
-
-# 5. Temperatura CPU > 80°C (solo Raspberry Pi)
-if command -v vcgencmd &>/dev/null; then
-    TEMP=$(vcgencmd measure_temp 2>/dev/null | grep -o '[0-9]*\.[0-9]*')
-    TEMP_INT=${TEMP%.*}
-    if [ "$TEMP_INT" -gt 80 ]; then
-        alerta "temperatura_alta" \
-            "🌡️ *ALERTA — $HOSTNAME*
-Temperatura CPU crítica: ${TEMP}°C
-Comprueba la ventilación de la placa."
+comprobar_servicio() {
+    local svc="$1" nombre="$2"
+    if servicio_activo "$svc"; then
+        resuelto "svc_$svc" "$nombre vuelve a funcionar."
     else
-        recuperacion "temperatura_alta" \
-            "✅ *RECUPERADO — $HOSTNAME*
-Temperatura CPU normalizada: ${TEMP}°C."
+        alerta "svc_$svc" "$nombre está parado. Revisa: sudo systemctl status $svc"
     fi
-fi
+}
+
+comprobar() {
+    mkdir -p "$(dirname "$ESTADO")"
+    touch "$ESTADO"
+    leer_config
+
+    comprobar_servicio tailscaled "Tailscale"
+    case "$BLOQUEADOR" in
+        adguard) comprobar_servicio adguardhome "AdGuard Home" ;;
+        pihole)  comprobar_servicio pihole-FTL "Pi-hole" ;;
+    esac
+    if [[ "${PICOCLAW:-no}" == "si" ]]; then
+        comprobar_servicio picoclaw "PicoClaw"
+    fi
+
+    if curl --silent --head --max-time 10 --proto '=https' https://api.telegram.org >/dev/null; then
+        resuelto internet "Vuelve a haber internet. Hubo un corte desde $(cat "$ESTADO.internet" 2>/dev/null || echo 'hace un rato')."
+        rm -f "$ESTADO.internet"
+    elif ! grep -qxF internet "$ESTADO"; then
+        # Sin internet el aviso no puede salir: se apunta el corte y se avisa al volver.
+        echo internet >>"$ESTADO"
+        date '+%d/%m %H:%M' >"$ESTADO.internet"
+    fi
+
+    local disco
+    disco="$(df --output=pcent / | tail -1 | tr -dc '0-9')"
+    if (( disco > 90 )); then
+        alerta disco "Disco al ${disco}%. Libera espacio para evitar fallos."
+    else
+        resuelto disco "Uso de disco normal (${disco}%)."
+    fi
+
+    local t
+    if [[ -r /sys/class/thermal/thermal_zone0/temp ]]; then
+        t=$(( $(cat /sys/class/thermal/thermal_zone0/temp) / 1000 ))
+        if (( t > 80 )); then
+            alerta temperatura "Temperatura de la CPU en ${t} °C. Revisa la ventilación."
+        elif (( t < 75 )); then
+            resuelto temperatura "Temperatura normal (${t} °C)."
+        fi
+    fi
+}
+
+configurar() {
+    requiere_root
+    local token chat
+    echo "  1. En Telegram, habla con @BotFather, escribe /newbot y copia el token."
+    echo "  2. Habla con @userinfobot y copia tu ID numérico."
+    read -r -s -p "  Token del bot: " token; echo
+    read -r -p "  Tu ID numérico de Telegram: " chat
+    [[ "$token" =~ ^[0-9]{6,12}:[A-Za-z0-9_-]{30,}$ ]] || morir "El token no tiene el formato esperado."
+    [[ "$chat" =~ ^-?[0-9]{5,15}$ ]] || morir "El ID debe ser numérico."
+    install -d -m 0755 "$DIR_CONF"
+    ( umask 077; printf 'TELEGRAM_TOKEN=%s\nTELEGRAM_CHAT_ID=%s\n' "$token" "$chat" >"$ENV_FILE" )
+    chmod 0600 "$ENV_FILE"
+    TELEGRAM_TOKEN="$token" TELEGRAM_CHAT_ID="$chat" enviar_telegram "Alertas del exit node configuradas en $(hostname)." \
+        || morir "No se pudo enviar el mensaje de prueba. Revisa el token y que hayas escrito antes al bot."
+    systemctl enable --now exitnode-alertas.timer
+    ok "Alertas activas. Te ha llegado un mensaje de prueba."
+}
+
+desactivar() {
+    requiere_root
+    systemctl disable --now exitnode-alertas.timer 2>/dev/null || true
+    rm -f "$ENV_FILE"
+    ok "Alertas desactivadas y token borrado."
+}
+
+case "$MODO" in
+    --comprobar)  comprobar ;;
+    --configurar) configurar ;;
+    --desactivar) desactivar ;;
+    *) sed -n '2,10p' "$0"; exit 1 ;;
+esac

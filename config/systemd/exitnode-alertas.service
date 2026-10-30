@@ -1,0 +1,28 @@
+[Unit]
+Description=Exit node: comprobación de servicios y alertas por Telegram
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/exitnode/alertas.env
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/exitnode/scripts/alertas.sh --comprobar
+# systemd lee este fichero como root antes de bajar privilegios: el token no queda legible para nadie más.
+EnvironmentFile=/etc/exitnode/alertas.env
+DynamicUser=yes
+StateDirectory=exitnode-alertas
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+UMask=0077
