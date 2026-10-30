@@ -14,6 +14,7 @@
 [![Platform](https://img.shields.io/badge/Platform-ARM64-green?style=for-the-badge&logo=raspberrypi&logoColor=white)](https://www.raspberrypi.com)
 [![OS](https://img.shields.io/badge/OS-Raspberry%20Pi%20OS%20Lite-red?style=for-the-badge&logo=linux&logoColor=white)](https://www.raspberrypi.com/software/)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+[![Pruebas](https://github.com/RicardoEdreiraPenas/tailscale-exit-node-arm64/actions/workflows/pruebas.yml/badge.svg)](https://github.com/RicardoEdreiraPenas/tailscale-exit-node-arm64/actions/workflows/pruebas.yml)
 
 ---
 
@@ -54,7 +55,7 @@
 | Raspberry Pi 4, 5 o Radxa ROCK 3C | Raspberry Pi OS Lite **64-bit (ARM64)** |
 | Tarjeta microSD 8 GB o más | Cuenta gratuita en [tailscale.com](https://tailscale.com) |
 
-> 💡 Todo lo que se descarga se comprueba con su suma SHA-256 antes de instalarse (`versiones.conf`).
+> 💡 AdGuard, PicoClaw y el instalador de Pi-hole se comprueban con su suma SHA-256 antes de instalarse (`versiones.conf`); Tailscale viene de su repositorio firmado.
 
 ---
 
@@ -87,7 +88,7 @@ sudo bash scripts/status.sh
 |:---:|:---:|:---|
 | 🖥️ **Windows** | [Descargar](https://tailscale.com/download/windows) | Instala Tailscale → bandeja del sistema → **Exit Node** → selecciona la Raspberry Pi |
 | 🍎 **Mac** | [App Store](https://apps.apple.com/app/tailscale/id1475387142) | Instala Tailscale → barra de menú → **Exit Node** → selecciona la Raspberry Pi |
-| 📺 **Fire TV Stick** | APK directo | Activa opciones de desarrollador → instala **Downloader** → descarga desde `pkgs.tailscale.com/stable` → escanea QR → activa **Exit Node** |
+| 📺 **Fire TV Stick** | APK directo | Activa opciones de desarrollador → instala **Downloader** → descarga desde `https://pkgs.tailscale.com/stable/` → escanea QR → activa **Exit Node** |
 | 📱 **Android TV / Google TV** | Google Play | Busca *Tailscale* → instala → activa **Exit Node** en la app |
 | 📺 **Smart TV Samsung / LG** | Sin app | Usa un Chromecast/Fire TV con Tailscale o un router de viaje con Tailscale ([ver guía](GUIA_INSTALACION.md#smart-tv-samsung-o-lg-sin-tailscale)) |
 
@@ -110,7 +111,7 @@ Todos se ejecutan con `sudo bash scripts/<nombre>`.
 | `update.sh` | 🔄 Aplica al momento las versiones fijadas en `versiones.conf` |
 | `uninstall.sh` | 🗑️ Deshace la instalación |
 
-> Opción `--simular` en `install.sh`: muestra lo que haría sin cambiar nada.
+> Con `--simular`, `install.sh` (y los scripts que lanza) muestran lo que harían sin cambiar nada. Útil antes de reinstalar.
 
 ---
 
@@ -157,7 +158,7 @@ Al recuperarse la corriente, la Raspberry Pi arranca y los servicios se inician 
 
 ❌ Sin intervención manual
 ✅ Recuperación automática
-✅ Mantenimiento cero
+✅ Parches automáticos cada día
 
 </td>
 </tr>
@@ -189,15 +190,17 @@ Medido con los programas reales en [pruebas/laboratorio_dns](pruebas/laboratorio
 
 | # | Sección |
 |:---:|:---|
-| 1️⃣ | Preparar la microSD desde Windows o Mac |
-| 2️⃣ | Primer arranque y conexión SSH |
-| 3️⃣ | Instalación automática paso a paso |
-| 4️⃣ | Verificación del sistema |
-| 5️⃣ | Funciones opcionales: AdGuard Home, alertas Telegram, auto-update |
-| 6️⃣ | Mantenimiento y comandos útiles |
-| 7️⃣ | Prueba definitiva desde el móvil |
-| 8️⃣ | Conexión de dispositivos: Windows, Mac, Fire TV Stick, Android TV, Smart TV |
-| 9️⃣ | Solución de problemas frecuentes |
+| 1️⃣ | Preparar la microSD (con clave SSH) |
+| 2️⃣ | Primer arranque |
+| 3️⃣ | Instalación, activar el exit node y comprobar |
+| 4️⃣ | Seguridad recomendada: SSH con clave, caducidad de la clave, ACL |
+| 5️⃣ | Bloqueador de anuncios: AdGuard Home o Pi-hole |
+| 6️⃣ | Alertas por Telegram |
+| 7️⃣ | Asistente PicoClaw ([guía propia](GUIA_PICOCLAW_IA.md)) |
+| 8️⃣ | Mantenimiento |
+| 9️⃣ | Prueba desde el móvil y medición de velocidad |
+| 🔟 | Conectar dispositivos: Windows, Mac, móvil, Android TV, Fire TV, Smart TV |
+| ❓ | Solución de problemas y resiliencia |
 
 ---
 
