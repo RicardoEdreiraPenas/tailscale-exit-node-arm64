@@ -6,7 +6,7 @@
 #   sudo bash scripts/update.sh
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib/comun.sh"
-[[ " ${*} " == *" --simular "* ]] && SIMULAR=1
+for arg in "$@"; do [[ "$arg" == "--simular" ]] && SIMULAR=1; done
 requiere_root
 cargar_versiones
 leer_config
@@ -18,7 +18,7 @@ ok "Paquetes al día ($(tailscale version 2>/dev/null | head -1))"
 
 case "$BLOQUEADOR" in
     adguard)
-        actual="$(/opt/AdGuardHome/AdGuardHome --version 2>/dev/null | grep -o 'v[0-9.]*' | head -1)"
+        actual="$(/opt/AdGuardHome/AdGuardHome --version 2>/dev/null | grep -oE 'v[0-9]+(\.[0-9]+)+' | head -1)"
         if [[ "$actual" != "$ADGUARD_VERSION" ]]; then
             info "AdGuard Home $actual -> $ADGUARD_VERSION"
             bash "$DIR_REPO/scripts/bloqueador.sh" instalar adguard
@@ -34,8 +34,7 @@ if [[ "${PICOCLAW:-no}" == "si" ]]; then
     actual="$(dpkg-query -W -f='${Version}' picoclaw 2>/dev/null || true)"
     if [[ "v${actual#v}" != "$PICOCLAW_VERSION" ]]; then
         info "PicoClaw ${actual:-?} -> $PICOCLAW_VERSION"
-        bash "$DIR_REPO/scripts/picoclaw.sh" instalar
-        bash "$DIR_REPO/scripts/picoclaw.sh" endurecer
+        bash "$DIR_REPO/scripts/picoclaw.sh" actualizar
     else
         ok "PicoClaw $PICOCLAW_VERSION ya es la versión fijada"
     fi

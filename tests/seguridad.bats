@@ -126,6 +126,50 @@ EOF
 }
 
 @test "el informe de PicoClaw no lo escribe root en la carpeta del usuario picoclaw" {
-    grep -q 'runuser -u picoclaw' "$REPO/config/systemd/picoclaw-estado.service"
+    grep -q 'setpriv --reuid=picoclaw' "$REPO/config/systemd/picoclaw-estado.service"
     nunca grep -qE "> /var/lib/picoclaw/workspace/[^\"]*; chown" "$REPO/config/systemd/picoclaw-estado.service"
+}
+
+@test "una instalación nueva de AdGuard genera contraseña sin cortarse (pipefail)" {
+    SIMULAR=1 run bash "$REPO/scripts/bloqueador.sh" instalar adguard
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ Contraseña:\ [A-Za-z0-9]{20} ]]
+}
+
+@test "una instalación nueva de Pi-hole siempre pone contraseña al panel" {
+    SIMULAR=1 run bash "$REPO/scripts/bloqueador.sh" instalar pihole
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[simulado] pihole setpassword"* ]]
+    [[ "$output" =~ Contraseña:\ [A-Za-z0-9]{20} ]]
+}
+
+@test "--simular funciona aunque vaya después de otros argumentos" {
+    run bash "$REPO/scripts/bloqueador.sh" instalar adguard --simular
+    [ "$status" -eq 0 ]
+    nunca grep -qE '^(apt-get|curl|useradd) ' "$REGISTRO"
+}
+
+@test "las alertas siguen comprobando aunque Telegram no responda" {
+    export TELEGRAM_TOKEN="123456789:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" TELEGRAM_CHAT_ID="987654321"  # gitleaks:allow (token falso de prueba)
+    export STATE_DIRECTORY="$RAIZ/estado"
+    mkdir -p "$RAIZ/bin"; printf '#!/bin/sh\nexit 3\n' >"$RAIZ/bin/systemctl"; chmod +x "$RAIZ/bin/systemctl"
+    CURL_RC=6 PATH="$RAIZ/bin:$PATH" run bash "$REPO/scripts/alertas.sh" --comprobar
+    [ "$status" -eq 0 ]
+    # El corte de internet queda apuntado para avisar al volver la conexión.
+    grep -qx internet "$STATE_DIRECTORY/activas"
+    [ -s "$STATE_DIRECTORY/activas.internet" ]
+}
+
+@test "root no escribe a través de un enlace simbólico" {
+    echo "original" >"$RAIZ/victima"
+    mkdir -p "$RAIZ/var/lib/x"
+    ln -s "$RAIZ/victima" "$RAIZ/var/lib/x/AGENT.md"
+    run bash -c "source '$REPO/scripts/lib/comun.sh'; echo atacante | escribir_fichero /var/lib/x/AGENT.md 0644"
+    [ "$status" -ne 0 ]
+    [ "$(cat "$RAIZ/victima")" = "original" ]
+}
+
+@test "PicoClaw: nada de lo que toca su carpeta se hace como root" {
+    nunca grep -nE 'escribir_fichero "\$WS|install -d .*\$WS|python3 .*picoclaw_endurecer\.py' "$REPO/scripts/picoclaw.sh"
+    grep -q 'como_usuario picoclaw env HOME="$HOME_PC" python3 -I "$ENDURECER"' "$REPO/scripts/picoclaw.sh"
 }

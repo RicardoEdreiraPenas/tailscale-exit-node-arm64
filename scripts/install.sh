@@ -150,10 +150,42 @@ configurar_firewall() {
     ejecutar ufw allow in on tailscale0 comment 'Tailscale: red privada'
     # El exit node: lo que entra por Tailscale puede salir a internet.
     ejecutar ufw route allow in on tailscale0 out on "$WAN_IF" comment 'Exit node'
-    # SSH solo desde casa (y por Tailscale, ya permitido arriba).
+    # SSH desde casa (IPv4 y direcciones IPv6 de enlace local, que usa raspberrypi.local en macOS)
+    # y por Tailscale, ya permitido arriba.
     ejecutar ufw allow from "$LAN_SUBRED" to any port 22 proto tcp comment 'SSH desde la red local'
+    ejecutar ufw allow from fe80::/10 to any port 22 proto tcp comment 'SSH desde la red local (IPv6)'
+    # Y siempre desde el equipo desde el que estás conectado ahora, esté en la subred que esté.
+    local cliente="${SSH_CONNECTION:-}"
+    cliente="${cliente%% *}"
+    if [[ -n "${SSH_CONNECTION:-}" && "$cliente" =~ ^[0-9a-fA-F:.]+$ ]]; then
+        cliente="${cliente%%%*}"
+        ejecutar ufw allow from "$cliente" to any port 22 proto tcp comment 'SSH desde el equipo de la instalación'
+    fi
+    armar_vuelta_atras
     ejecutar ufw --force enable
-    ok "Cortafuegos activo: entrada cerrada salvo SSH desde $LAN_SUBRED y la red de Tailscale"
+    ok "Cortafuegos activo: entrada cerrada salvo SSH desde $LAN_SUBRED, ${cliente:-tu equipo} y la red de Tailscale"
+    confirmar_acceso_ssh
+}
+
+# Si al activar el cortafuegos te quedas sin SSH, lo desactiva solo a los 10 minutos.
+armar_vuelta_atras() {
+    [[ -n "${SSH_CONNECTION:-}" && -t 0 && "$NO_INTERACTIVO" != "1" ]] || return 0
+    ejecutar systemd-run --quiet --unit=exitnode-ufw-vuelta-atras --on-active=10min /usr/sbin/ufw --force disable \
+        || aviso "No se pudo programar la vuelta atrás del cortafuegos."
+    VUELTA_ATRAS=1
+}
+
+confirmar_acceso_ssh() {
+    [[ "${VUELTA_ATRAS:-0}" == "1" ]] || return 0
+    printf '\n  %s\n  %s\n\n' \
+        "Comprobación de seguridad: abre OTRA terminal y conéctate por SSH a la placa." \
+        "Si no pudieras entrar, no hagas nada: el cortafuegos se desactivará solo en 10 minutos."
+    if confirmar "¿Has podido entrar por SSH desde otra terminal?" n; then
+        ejecutar systemctl stop exitnode-ufw-vuelta-atras.timer 2>/dev/null || true
+        ok "Cortafuegos confirmado"
+    else
+        aviso "El cortafuegos se desactivará en 10 minutos. Revisa la regla de SSH y vuelve a ejecutar el instalador."
+    fi
 }
 
 migrar_instalacion_antigua() {
@@ -170,8 +202,11 @@ migrar_instalacion_antigua() {
     # La tarea cron antigua de auto_update.sh instalaba paquetes sin verificar como root.
     for u in root "${SUDO_USER:-}"; do
         [[ -n "$u" ]] || continue
-        if crontab -u "$u" -l 2>/dev/null | grep -q 'auto_update.sh'; then
-            crontab -u "$u" -l 2>/dev/null | grep -v 'auto_update.sh' | ejecutar crontab -u "$u" -
+        local actual
+        actual="$(crontab -u "$u" -l 2>/dev/null || true)"
+        if grep -q 'auto_update.sh' <<<"$actual"; then
+            # grep -v devuelve 1 si no queda ninguna línea: no debe cortar la instalación.
+            { grep -v 'auto_update.sh' <<<"$actual" || true; } | ejecutar crontab -u "$u" -
             ok "Eliminada la tarea cron antigua de auto_update.sh ($u)"
         fi
     done

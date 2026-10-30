@@ -36,6 +36,13 @@
 - El instalador detecta y desactiva la configuración insegura de versiones anteriores.
 
 ### Correcciones
+- Revisión independiente antes de publicar: la instalación de un bloqueador nuevo se cortaba al
+  generar la contraseña (SIGPIPE con `pipefail`) y Pi-hole quedaba sin contraseña; el cron antiguo
+  como única tarea cortaba la instalación; las alertas se paraban si Telegram no respondía;
+  `--simular` no llegaba a los scripts que lanza el instalador; root escribía en la carpeta de
+  PicoClaw (riesgo con enlaces simbólicos); AdGuard no arrancaba con IPv6 desactivado.
+- El cortafuegos deja entrar siempre al equipo desde el que se instala y se desactiva solo a los
+  10 minutos si no confirmas que sigues teniendo SSH.
 - `status.sh` nunca detectaba el exit node aprobado: buscaba `"ExitNodeOption":true` sin espacio y
   Tailscale escribe el JSON con espacios. Ahora se lee con `jq`.
 - `auto_update.sh` no actualizaba nunca (la URL tenía la versión fija). Se elimina; lo sustituyen

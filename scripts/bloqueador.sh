@@ -11,9 +11,15 @@
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib/comun.sh"
 
-ACCION="${1:-}"
-TIPO="${2:-}"
-[[ " ${*} " == *" --simular "* ]] && SIMULAR=1
+ACCION=""
+TIPO=""
+for arg in "$@"; do
+    case "$arg" in
+        --simular) SIMULAR=1 ;;
+        -s|--si) NO_INTERACTIVO=1 ;;
+        *) if [[ -z "$ACCION" ]]; then ACCION="$arg"; else TIPO="$arg"; fi ;;
+    esac
+done
 
 requiere_root
 cargar_versiones
@@ -29,13 +35,13 @@ pedir_contrasena() {
     # Devuelve una contraseña escrita por el usuario o una aleatoria si no hay terminal.
     local p1 p2
     if [[ "$NO_INTERACTIVO" == "1" || ! -t 0 ]]; then
-        tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20
+        contrasena_aleatoria
         return
     fi
     while true; do
         read -r -s -p "  Contraseña para el panel web (mínimo 12 caracteres, vacío = generar una): " p1; echo >&2
         if [[ -z "$p1" ]]; then
-            tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20
+            contrasena_aleatoria
             return
         fi
         read -r -s -p "  Repítela: " p2; echo >&2
@@ -155,20 +161,25 @@ instalar_pihole() {
         "$tmp/basic-install.sh" "$PIHOLE_INSTALLER_SHA256"
 
     # Con la configuración ya creada, el instalador oficial no abre diálogos.
+    # Ojo: así también se salta la contraseña aleatoria que pone en una instalación nueva;
+    # la ponemos nosotros justo después.
+    local creado=0
     if [[ ! -f "$(r /etc/pihole/pihole.toml)" ]]; then
         escribir_fichero /etc/pihole/pihole.toml 0644 <"$DIR_REPO/config/plantillas/pihole.toml"
+        creado=1
     fi
-    ejecutar env PIHOLE_SKIP_OS_CHECK=false bash "$tmp/basic-install.sh" --unattended
+    if ! ejecutar env PIHOLE_SKIP_OS_CHECK=false bash "$tmp/basic-install.sh" --unattended; then
+        [[ "$creado" == "1" ]] && ejecutar rm -f "$(r /etc/pihole/pihole.toml)"
+        morir "El instalador de Pi-hole ha fallado (mira los mensajes de arriba). No queda nada a medias de este script."
+    fi
 
-    if [[ -z "${PIHOLE_PASS_HECHA:-}" ]]; then
-        pass="$(pedir_contrasena)"
-        if [[ "$SIMULAR" == "1" ]]; then
-            printf '  [simulado] pihole setpassword\n'
-        else
-            pihole setpassword "$pass" >/dev/null
-        fi
-        GUARDAR_PASS="$pass"
+    pass="$(pedir_contrasena)"
+    if [[ "$SIMULAR" == "1" ]]; then
+        printf '  [simulado] pihole setpassword\n'
+    else
+        pihole setpassword "$pass" >/dev/null || morir "No se pudo poner la contraseña del panel de Pi-hole."
     fi
+    GUARDAR_PASS="$pass"
     guardar_config BLOQUEADOR pihole
     abrir_firewall_dns
     esperar_y_probar

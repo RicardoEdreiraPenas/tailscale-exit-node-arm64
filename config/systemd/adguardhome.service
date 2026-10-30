@@ -34,6 +34,8 @@ RestrictRealtime=yes
 RestrictSUIDSGID=yes
 LockPersonality=yes
 SystemCallArchitectures=native
+# Si se bloquea una llamada al sistema, que devuelva error en vez de matar el proceso.
+SystemCallErrorNumber=EPERM
 SystemCallFilter=@system-service
 
 [Install]

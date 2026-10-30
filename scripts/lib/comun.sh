@@ -16,6 +16,8 @@ DIR_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 RAIZ="${RAIZ:-}"
 SIMULAR="${SIMULAR:-0}"
 NO_INTERACTIVO="${NO_INTERACTIVO:-0}"
+# Los scripts que llaman a otros (install.sh -> bloqueador.sh) les pasan el modo.
+export SIMULAR NO_INTERACTIVO
 
 DIR_CONF="/etc/exitnode"
 DIR_ESTADO="/var/lib/exitnode"
@@ -107,6 +109,29 @@ descargar_verificado() {
     ok "Descarga verificada: $(basename "$destino")"
 }
 
+# Contraseña aleatoria de 20 caracteres. (Con "tr < /dev/urandom | head" el pipeline
+# devuelve SIGPIPE y, con pipefail, abortaría el script.)
+contrasena_aleatoria() {
+    LC_ALL=C tr -dc 'A-Za-z0-9' < <(head -c 600 /dev/urandom) | cut -c1-20
+}
+
+# Comprueba que una ruta no es un enlace simbólico (ni ella ni la carpeta que la contiene).
+# Root nunca debe escribir a través de un enlace que pueda haber puesto otro usuario.
+sin_enlaces() {
+    local ruta
+    for ruta in "$@"; do
+        if [[ -L "$ruta" || -L "$(dirname "$ruta")" ]]; then
+            morir "$ruta (o su carpeta) es un enlace simbólico. Por seguridad no sigo: revisa quién lo ha creado."
+        fi
+    done
+}
+
+# Ejecuta un comando como otro usuario, sin abrir una sesión PAM.
+como_usuario() {
+    local usuario="$1"; shift
+    ejecutar setpriv --reuid="$usuario" --regid="$usuario" --init-groups --reset-env -- "$@"
+}
+
 # Escribe la entrada estándar en un fichero con permisos y dueño concretos.
 # Si ya existía con otro contenido, guarda una copia .bak con fecha.
 escribir_fichero() {
@@ -120,8 +145,11 @@ escribir_fichero() {
         return 0
     fi
     mkdir -p "$(dirname "$destino")"
-    if [[ -f "$destino" ]] && ! cmp -s "$tmp" "$destino"; then
-        cp -p "$destino" "$destino.bak.$(date +%Y%m%d%H%M%S)"
+    sin_enlaces "$destino"
+    # Copia de seguridad solo en carpetas de root: en una carpeta de otro usuario, ese usuario
+    # podría dejar preparado un enlace con el nombre de la copia.
+    if [[ -f "$destino" ]] && ! cmp -s "$tmp" "$destino" && [[ "$(stat -c %u "$(dirname "$destino")")" == "0" ]]; then
+        cp -P --preserve=mode,timestamps "$destino" "$destino.bak.$(date +%Y%m%d%H%M%S)"
     fi
     install -m "$modo" "$tmp" "$destino"
     if [[ -z "$RAIZ" ]]; then

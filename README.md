@@ -167,10 +167,10 @@ Al recuperarse la corriente, la Raspberry Pi arranca y los servicios se inician 
 
 ## 🔒 Seguridad
 
-- 🔏 **Descargas verificadas:** AdGuard, el instalador de Pi-hole y PicoClaw se comprueban con SHA-256; la clave de Tailscale, por su huella.
-- 🧱 **Cortafuegos:** entrada cerrada salvo SSH desde casa y Tailscale; los paneles web solo por Tailscale.
-- 👤 **Servicios aislados:** cada uno con su usuario y restricciones de systemd; ninguno corre como root.
-- 🤖 **PicoClaw sin shell:** solo lee un informe de estado y solo responde a tu ID de Telegram (tiene una vulnerabilidad de inyección de comandos sin parche).
+- 🔏 **Descargas verificadas:** AdGuard, el instalador de Pi-hole y PicoClaw se comprueban con SHA-256; la clave de Tailscale, por su huella. (El instalador de Pi-hole descarga después su propio motor, que verifica él mismo.)
+- 🧱 **Cortafuegos:** desde la red de casa solo se llega a SSH (y al DNS si hay bloqueador). Desde Tailscale se llega a todo: quién entra a tu red de Tailscale lo controlas en su panel.
+- 👤 **Servicios aislados:** AdGuard, PicoClaw y las alertas corren con su propio usuario sin privilegios y restricciones de systemd. Tailscale y las tareas de mantenimiento corren como root, porque lo necesitan.
+- 🤖 **PicoClaw sin shell:** no puede ejecutar comandos ni salir de su carpeta; responde con un informe de estado y solo a tu ID de Telegram (tiene una vulnerabilidad de inyección de comandos sin parche).
 - 🔄 **Parches automáticos** del sistema y de Tailscale cada día.
 
 Detalles y modelo de amenazas en [SECURITY.md](SECURITY.md).
@@ -179,7 +179,7 @@ Detalles y modelo de amenazas en [SECURITY.md](SECURITY.md).
 
 ## 📊 ¿AdGuard o Pi-hole? ¿Frena la conexión?
 
-Medido con los programas reales en [pruebas/laboratorio_dns](pruebas/laboratorio_dns/RESULTADOS.md): bloquean lo mismo con la misma lista, responden desde caché en ~0,2 ms y añaden menos de 1 ms a una consulta nueva. **Ninguno frena la conexión**, porque solo intervienen en la consulta DNS. Se recomienda AdGuard porque cifra las consultas hacia fuera.
+Medido con los programas reales en [pruebas/laboratorio_dns](pruebas/laboratorio_dns/RESULTADOS.md): bloquean lo mismo con la misma lista, responden desde caché en ~0,2 ms y añaden menos de 1 ms a una consulta nueva. **Ninguno frena la conexión**, porque solo intervienen en la consulta DNS. Se recomienda AdGuard porque, con la configuración de este repositorio, cifra las consultas hacia fuera (eso no se midió en el laboratorio, que usa un origen local).
 
 ---
 

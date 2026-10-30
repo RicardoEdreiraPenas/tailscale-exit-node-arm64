@@ -4,7 +4,7 @@
 # Uso: sudo bash scripts/uninstall.sh
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib/comun.sh"
-[[ " ${*} " == *" --simular "* ]] && SIMULAR=1
+for arg in "$@"; do [[ "$arg" == "--simular" ]] && SIMULAR=1; done
 requiere_root
 leer_config
 

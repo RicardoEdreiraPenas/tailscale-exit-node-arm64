@@ -49,9 +49,22 @@ comprobar_servicio() {
 }
 
 comprobar() {
+    # Un aviso que no se puede enviar no debe cortar el resto de comprobaciones.
+    set +o errexit
     mkdir -p "$(dirname "$ESTADO")"
     touch "$ESTADO"
     leer_config
+
+    # Internet primero: si no hay conexión, se apunta el corte para avisar al volver.
+    if curl --silent --head --max-time 10 --proto '=https' https://api.telegram.org >/dev/null; then
+        resuelto internet "Vuelve a haber internet. Hubo un corte desde $(cat "$ESTADO.internet" 2>/dev/null || echo 'hace un rato')."
+        rm -f "$ESTADO.internet"
+    elif ! grep -qxF internet "$ESTADO"; then
+        # Sin internet el aviso no puede salir: se apunta el corte y se avisa al volver.
+        echo internet >>"$ESTADO"
+        date '+%d/%m %H:%M' >"$ESTADO.internet"
+    fi
+
 
     comprobar_servicio tailscaled "Tailscale"
     case "$BLOQUEADOR" in
@@ -60,15 +73,6 @@ comprobar() {
     esac
     if [[ "${PICOCLAW:-no}" == "si" ]]; then
         comprobar_servicio picoclaw "PicoClaw"
-    fi
-
-    if curl --silent --head --max-time 10 --proto '=https' https://api.telegram.org >/dev/null; then
-        resuelto internet "Vuelve a haber internet. Hubo un corte desde $(cat "$ESTADO.internet" 2>/dev/null || echo 'hace un rato')."
-        rm -f "$ESTADO.internet"
-    elif ! grep -qxF internet "$ESTADO"; then
-        # Sin internet el aviso no puede salir: se apunta el corte y se avisa al volver.
-        echo internet >>"$ESTADO"
-        date '+%d/%m %H:%M' >"$ESTADO.internet"
     fi
 
     local disco

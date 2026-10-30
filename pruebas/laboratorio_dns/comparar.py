@@ -172,7 +172,7 @@ def arrancar_adguard(a, dominios_lista, trabajo):
                            capture_output=True, text=True, check=True).stdout.strip().split(":", 1)[1]
     cfg = cfg.replace("@ADMIN_USER@", "admin").replace("@ADMIN_HASH@", hash_)
     cfg = cfg.replace("address: 0.0.0.0:8080", "address: 127.0.0.1:8081")
-    cfg = cfg.replace("    - 0.0.0.0\n    - '::'\n  port: 53", f"    - 127.0.0.1\n  port: {PUERTO_AG}")
+    cfg = cfg.replace("    - 0.0.0.0\n  port: 53", f"    - 127.0.0.1\n  port: {PUERTO_AG}")
     cfg = re.sub(r"  upstream_dns:\n(    - .*\n)+", f"  upstream_dns:\n    - 127.0.0.1:{PUERTO_ORIGEN}\n", cfg)
     cfg = re.sub(r"  fallback_dns:\n(    - .*\n)+", "  fallback_dns: []\n", cfg)
     cfg = cfg.replace("/var/lib/adguardhome/userfilters/*", os.path.join(d, "userfilters", "*"))

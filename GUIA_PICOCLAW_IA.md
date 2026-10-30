@@ -34,28 +34,23 @@ Por eso aquí el asistente:
 sudo bash scripts/picoclaw.sh instalar
 ```
 
-Descarga PicoClaw verificando su suma SHA-256, crea el usuario `picoclaw` y deja el servicio
-preparado, pero sin arrancar.
+El script:
+
+1. Descarga PicoClaw comprobando su suma SHA-256 y crea el usuario `picoclaw`.
+2. Genera la configuración por defecto con ese usuario.
+3. Te pide el token del bot, tu ID numérico de Telegram, la API key y el modelo
+   (por defecto `gemini-2.5-flash`). Los secretos no se escriben en la pantalla ni pasan
+   por la línea de comandos.
+4. Aplica la configuración segura y arranca el servicio. Si falta algo, lo explica y no arranca.
+
+Para cambiar el token, la clave o el modelo más adelante:
 
 ```bash
-sudo -u picoclaw -H picoclaw onboard
+sudo bash scripts/picoclaw.sh configurar
 ```
 
-En el asistente:
-
-- Canal: **Telegram**, con el token del bot.
-- Usuarios permitidos (`allow_from`): **tu ID numérico**. No pongas tu nombre de usuario: se
-  puede cambiar y suplantar.
-- Proveedor: el de tu API key (por ejemplo Gemini, modelo `gemini-2.5-flash`).
-
-PicoClaw guarda los secretos aparte, en `/var/lib/picoclaw/.picoclaw/.security.yml`.
-
-```bash
-sudo bash scripts/picoclaw.sh endurecer
-```
-
-Comprueba la configuración, desactiva lo peligroso, ajusta los permisos y arranca el servicio.
-Si falta algo (por ejemplo, la lista de usuarios), lo explica y no arranca.
+> Ten en cuenta que el informe de estado (nombre de la placa, IP de Tailscale, estado de los
+> servicios) se envía al proveedor de IA cada vez que preguntas.
 
 ## Uso
 
@@ -77,23 +72,14 @@ sudo bash scripts/picoclaw.sh endurecer --permitir-comandos
 Activa la herramienta de comandos con los filtros de PicoClaw, pero el asistente sigue sin
 `sudo`, aislado en su carpeta. Hazlo solo sabiendo que la vulnerabilidad sigue abierta.
 
-## Cambiar de modelo
-
-Vuelve a ejecutar el asistente y después `endurecer`:
-
-```bash
-sudo -u picoclaw -H picoclaw onboard
-sudo bash scripts/picoclaw.sh endurecer
-```
-
 ## Problemas frecuentes
 
 | Problema | Solución |
 |---|---|
-| `endurecer` dice que falta `allow_from` | Repite `onboard` y pon tu ID numérico de Telegram |
+| Dice que falta `allow_from` | `sudo bash scripts/picoclaw.sh configurar` y pon tu ID numérico de Telegram |
 | El bot no responde | `sudo systemctl status picoclaw` y `sudo journalctl -u picoclaw -n 50` |
-| `401 Invalid API Key` | Clave mal copiada: repite `onboard` |
-| `404 model no longer available` | El modelo se ha retirado: elige otro en `onboard` |
+| `401 Invalid API Key` | Clave mal copiada: `sudo bash scripts/picoclaw.sh configurar` |
+| `404 model no longer available` | El modelo se ha retirado: elige otro con `configurar` |
 | El asistente dice que el informe es antiguo | `sudo systemctl status picoclaw-estado.timer` |
 
 ## Desinstalar

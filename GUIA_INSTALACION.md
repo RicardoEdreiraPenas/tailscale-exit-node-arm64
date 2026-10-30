@@ -58,8 +58,11 @@ El instalador:
 - Activa UDP GRO forwarding en la interfaz de salida, que es lo que recomienda Tailscale
   para que un exit node en Linux use menos CPU y vaya más rápido.
 - Activa las actualizaciones de seguridad automáticas, incluidas las de Tailscale.
-- Configura el cortafuegos: cierra todo lo que entra, salvo SSH desde tu red local, el tráfico
-  de Tailscale y el puerto de conexiones directas de Tailscale (41641/udp).
+- Configura el cortafuegos: cierra todo lo que entra, salvo SSH desde tu red local y desde el
+  equipo con el que haces la instalación, el tráfico de Tailscale y el puerto de conexiones
+  directas de Tailscale (41641/udp). Si te conectas por SSH, te pide que compruebes desde otra
+  terminal que sigues pudiendo entrar; si no contestas, el cortafuegos se desactiva solo a los
+  10 minutos.
 - Si lo pides, instala el bloqueador de anuncios con la descarga verificada.
 - Detecta restos de versiones anteriores del proyecto y los desactiva.
 
@@ -142,8 +145,8 @@ llena el disco, si sube la temperatura o si hubo un corte de internet. El token 
 
 ## Parte 7. Asistente PicoClaw (opcional)
 
-Ver [GUIA_PICOCLAW_IA.md](GUIA_PICOCLAW_IA.md). Por seguridad, el asistente solo lee un informe de
-estado y no puede ejecutar comandos.
+Ver [GUIA_PICOCLAW_IA.md](GUIA_PICOCLAW_IA.md). Por seguridad, el asistente no puede ejecutar comandos:
+responde con un informe de estado que la placa genera cada minuto.
 
 ---
 

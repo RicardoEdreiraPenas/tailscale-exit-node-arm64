@@ -1,9 +1,10 @@
 # AdGuard Home frente a Pi-hole: comparación en laboratorio
 
 Prueba hecha el 30/10/2026 con `comparar.py` sobre un servidor x86 (Intel Xeon a
-2,1 GHz), con los dos bloqueadores limitados a **un solo núcleo** para acercarse
-a una Raspberry Pi. Los números absolutos serán más bajos en la placa; lo que
-interesa es la comparación y el orden de magnitud. Para medir en la Raspberry
+2,1 GHz), con los dos bloqueadores limitados a **un solo núcleo**. Un núcleo de Xeon
+sigue siendo bastante más rápido que uno de Raspberry Pi: los números absolutos
+serán más bajos en la placa. Lo que vale de esta prueba es la comparación entre los
+dos y el orden de magnitud. Para medir en la Raspberry
 real, usa `pruebas/benchmark_pi.sh`.
 
 ## Condiciones
@@ -11,7 +12,7 @@ real, usa `pruebas/benchmark_pi.sh`.
 | | |
 |---|---|
 | Versiones | AdGuard Home v0.107.79, Pi-hole FTL v6.8 (binarios oficiales, sumas verificadas) |
-| Configuración | la de este repositorio (`config/plantillas/`) |
+| Configuración | la de este repositorio (`config/plantillas/`), con tres cambios para poder comparar en local: origen DNS sin cifrar en 127.0.0.1 (el cifrado DoH de AdGuard no se mide aquí), validación DNSSEC desactivada en los dos y límite por cliente de Pi-hole desactivado |
 | Lista de bloqueo | la misma para los dos: StevenBlack hosts, 76.736 dominios |
 | DNS de origen | simulado en local con 20 ms de retardo, como un proveedor real |
 | Prueba de anuncios | 131 dominios de publicidad y rastreo de la prueba de d3ward (independiente de la lista) |

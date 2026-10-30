@@ -20,6 +20,7 @@ import re
 import sys
 import tempfile
 
+CANALES_PERMITIDOS = {"telegram"}
 HERRAMIENTAS_DESACTIVADAS = [
     "install_skill", "spawn", "subagent", "write_file", "edit_file",
     "append_file", "web_fetch", "web", "skills", "find_skills", "cron",
@@ -67,6 +68,11 @@ def endurecer(cfg, workspace, permitir_comandos):
     for nombre, canal in canales.items():
         if not isinstance(canal, dict) or not canal.get("enabled"):
             continue
+        if nombre not in CANALES_PERMITIDOS:
+            # Algunos canales (maixcam, line...) abren su propio puerto en 0.0.0.0.
+            canal["enabled"] = False
+            aviso(f"Canal '{nombre}' desactivado: este proyecto solo admite Telegram.")
+            continue
         permitidos = [str(x).strip() for x in (canal.get("allow_from") or [])]
         if not permitidos or any(p in VALORES_DE_EJEMPLO for p in permitidos):
             problemas.append(
@@ -90,9 +96,10 @@ def endurecer(cfg, workspace, permitir_comandos):
     defecto = agentes.setdefault("defaults", {})
     defecto["restrict_to_workspace"] = True
     defecto["workspace"] = workspace
-    for ag in agentes.get("agents") or []:
+    for ag in agentes.get("list") or []:
         if isinstance(ag, dict):
             ag["restrict_to_workspace"] = True
+            ag["workspace"] = workspace
     ok(f"Carpeta de trabajo limitada a {workspace}")
 
     # 3. Herramientas.
@@ -107,6 +114,9 @@ def endurecer(cfg, workspace, permitir_comandos):
         t = tools.setdefault(h, {})
         if isinstance(t, dict):
             t["enabled"] = True
+    tools.setdefault("cron", {})["allow_command"] = False
+    # Los hooks pueden lanzar procesos externos definidos en la configuración.
+    cfg.setdefault("hooks", {})["enabled"] = False
     ex = tools.setdefault("exec", {})
     if permitir_comandos:
         ex["enabled"] = True
@@ -119,7 +129,7 @@ def endurecer(cfg, workspace, permitir_comandos):
     else:
         ex["enabled"] = False
         ok("Ejecución de comandos desactivada (solo lectura del informe de estado)")
-    ok("Desactivadas: " + ", ".join(HERRAMIENTAS_DESACTIVADAS))
+    ok("Desactivadas: " + ", ".join(HERRAMIENTAS_DESACTIVADAS) + " y hooks")
 
     # 4. Gateway solo en local.
     gw = cfg.setdefault("gateway", {})
@@ -129,27 +139,60 @@ def endurecer(cfg, workspace, permitir_comandos):
     return problemas
 
 
+def configurar(cfg, datos):
+    """Rellena Telegram y el modelo con lo que el usuario ha introducido (llega por stdin)."""
+    canal = cfg.setdefault("channel_list", {}).setdefault("telegram", {})
+    canal["enabled"] = True
+    canal["type"] = "telegram"
+    canal["allow_from"] = [str(datos["chat_id"])]
+    canal.setdefault("settings", {})["token"] = datos["token"]
+    nombre = datos.get("modelo") or "gemini-2.5-flash"
+    modelos = [m for m in cfg.get("model_list") or [] if m.get("model_name") != nombre]
+    modelos.append({
+        "model_name": nombre,
+        "provider": "gemini",
+        "model": nombre,
+        "api_base": "https://generativelanguage.googleapis.com/v1beta",
+        "api_keys": [datos["api_key"]],
+    })
+    cfg["model_list"] = modelos
+    cfg.setdefault("agents", {}).setdefault("defaults", {})["model_name"] = nombre
+    ok(f"Telegram y modelo {nombre} configurados")
+
+
+def comprobar_no_enlace(ruta):
+    if os.path.islink(ruta):
+        fallo(f"{ruta} es un enlace simbólico; no sigo por seguridad.")
+        sys.exit(1)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--home", default="/var/lib/picoclaw/.picoclaw")
     p.add_argument("--workspace", default="/var/lib/picoclaw/workspace")
     p.add_argument("--permitir-comandos", action="store_true")
     p.add_argument("--comprobar", action="store_true", help="solo comprueba, no escribe")
+    p.add_argument("--configurar", action="store_true",
+                   help="lee de stdin un JSON con token, chat_id, api_key y modelo")
     a = p.parse_args()
 
     ruta = os.path.join(a.home, "config.json")
+    comprobar_no_enlace(a.home)
+    comprobar_no_enlace(ruta)
     if not os.path.isfile(ruta):
         fallo(f"No existe {ruta}. Ejecuta primero el asistente: picoclaw onboard")
         return 1
     with open(ruta) as f:
         cfg = json.load(f)
 
+    if a.configurar:
+        configurar(cfg, json.load(sys.stdin))
     problemas = endurecer(cfg, a.workspace, a.permitir_comandos)
     if not a.comprobar:
         guardar(ruta, cfg)
         os.chmod(a.home, 0o700)
         seg = os.path.join(a.home, ".security.yml")
-        if os.path.isfile(seg):
+        if os.path.isfile(seg) and not os.path.islink(seg):
             os.chmod(seg, 0o600)
             ok("Secretos en .security.yml con permisos 600")
         else:

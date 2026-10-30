@@ -83,3 +83,27 @@ teardown() { limpiar; }
     diff "$RAIZ/conf1" "$RAIZ/etc/exitnode/exitnode.conf"
     [ "$(grep -c '^BLOQUEADOR=' "$RAIZ/etc/exitnode/exitnode.conf")" -eq 1 ]
 }
+
+@test "con el cron antiguo como única tarea, la instalación no se corta" {
+    printf '0 4 * * * /bin/bash /home/ricardo/tailscale-exit-node-arm64/scripts/auto_update.sh\n' >"$RAIZ/crontab"
+    FALSO_CRONTAB="$RAIZ/crontab" SUDO_USER=ricardo run bash "$REPO/scripts/install.sh" --bloqueador=ninguno
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Eliminada la tarea cron antigua"* ]]
+    [[ "$output" == *"Listo"* ]]
+    nunca grep -q auto_update "$REGISTRO.crontab"
+}
+
+@test "el cortafuegos siempre deja entrar por SSH al equipo desde el que se instala" {
+    SSH_CONNECTION="10.8.0.5 50000 192.168.1.50 22" run bash "$REPO/scripts/install.sh" --bloqueador=ninguno
+    [ "$status" -eq 0 ]
+    llamado "ufw allow from 10.8.0.5 to any port 22 proto tcp"
+    llamado "ufw allow from fe80::/10 to any port 22 proto tcp"
+}
+
+@test "--simular no cambia nada, tampoco en el bloqueador que lanza" {
+    run bash "$REPO/scripts/install.sh" --simular --bloqueador=adguard
+    [ "$status" -eq 0 ]
+    nunca grep -qE '^(apt-get|systemctl|curl|useradd) |^ufw (allow|enable|default|route|delete|--force)' "$REGISTRO"
+    [[ "$output" == *"[simulado] descarga y comprobación"* ]]
+    [ ! -f "$RAIZ/etc/sysctl.d/99-exitnode.conf" ]
+}

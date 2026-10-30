@@ -7,7 +7,7 @@
 # para que no te quedes fuera. Si no la tiene, explica cómo añadirla.
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib/comun.sh"
-[[ " ${*} " == *" --simular "* ]] && SIMULAR=1
+for arg in "$@"; do [[ "$arg" == "--simular" ]] && SIMULAR=1; done
 requiere_root
 
 USUARIO="${SUDO_USER:-}"

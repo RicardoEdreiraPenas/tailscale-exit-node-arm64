@@ -36,7 +36,9 @@ if servicio_activo tailscaled; then
         elif es_root; then
             mal "No se anuncia como exit node. Ejecuta: sudo tailscale up --advertise-exit-node"
         fi
-        if [[ "$(jq -r '.Self.ExitNodeOption' <<<"$ST")" == "true" ]]; then
+        # Aprobado = Tailscale le ha concedido la ruta 0.0.0.0/0 (más fiable que ExitNodeOption).
+        if jq -e '.Self.AllowedIPs // [] | index("0.0.0.0/0")' <<<"$ST" >/dev/null 2>&1 || \
+           [[ "$(jq -r '.Self.ExitNodeOption' <<<"$ST")" == "true" ]]; then
             ok "Aprobado como exit node en el panel de Tailscale"
         else
             aviso "Aún no aprobado como exit node: login.tailscale.com/admin/machines -> Edit route settings"

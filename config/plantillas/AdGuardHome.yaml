@@ -1,7 +1,8 @@
 # Configuración inicial de AdGuard Home generada por scripts/bloqueador.sh.
 # Parte de la que crea AdGuard v0.107.79 en su asistente, con estos cambios:
 #  - panel web en el puerto 8080 (el cortafuegos solo lo abre por Tailscale)
-#  - DNS en el puerto 53 para la red local y Tailscale (el cortafuegos limita quién llega)
+#  - DNS en el puerto 53 por IPv4 para la red local y Tailscale (el cortafuegos limita quién
+#    llega). No se escucha en IPv6: si IPv6 está desactivado, AdGuard no arrancaría
 #  - sin límite de consultas por subred: todos los dispositivos de Tailscale comparten
 #    el rango 100.x y el límite de 20 por segundo por /24 frenaría la navegación
 #  - consultas hacia fuera cifradas (DNS sobre HTTPS) a Quad9 y Cloudflare
@@ -32,7 +33,6 @@ theme: auto
 dns:
   bind_hosts:
     - 0.0.0.0
-    - '::'
   port: 53
   anonymize_client_ip: false
   ratelimit: 0
