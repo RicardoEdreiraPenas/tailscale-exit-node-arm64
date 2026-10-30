@@ -1,0 +1,45 @@
+[Unit]
+Description=PicoClaw: asistente de estado por Telegram (sin acceso a la shell)
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=picoclaw
+Group=picoclaw
+WorkingDirectory=/var/lib/picoclaw
+Environment=HOME=/var/lib/picoclaw
+ExecStart=/usr/bin/picoclaw gateway
+Restart=on-failure
+RestartSec=10
+MemoryMax=192M
+UMask=0077
+
+# Aislamiento: el proceso solo puede escribir en su propio directorio.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/picoclaw
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,12 @@
+[Unit]
+Description=PicoClaw: genera el informe de estado que lee el asistente
+
+[Service]
+Type=oneshot
+# Corre como root para poder consultar Tailscale y el cortafuegos, pero solo escribe un fichero de texto.
+ExecStart=/bin/sh -c '/usr/local/lib/exitnode/scripts/status.sh --texto > /var/lib/picoclaw/workspace/estado.txt.tmp 2>&1; chown picoclaw:picoclaw /var/lib/picoclaw/workspace/estado.txt.tmp; chmod 0640 /var/lib/picoclaw/workspace/estado.txt.tmp; mv -f /var/lib/picoclaw/workspace/estado.txt.tmp /var/lib/picoclaw/workspace/estado.txt'
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=full
+ReadWritePaths=/var/lib/picoclaw/workspace
