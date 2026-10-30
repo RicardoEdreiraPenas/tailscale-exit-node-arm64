@@ -1,56 +1,50 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Actualiza todo a mano (además de las actualizaciones automáticas diarias).
+#
+# Uso:
+#   git pull                       # trae las versiones nuevas fijadas en versiones.conf
+#   sudo bash scripts/update.sh
 
-# ==============================================================================
-# Script de Actualización
-# Actualiza Tailscale y PicoClaw a sus últimas versiones
-# ==============================================================================
+source "$(dirname "${BASH_SOURCE[0]}")/lib/comun.sh"
+[[ " ${*} " == *" --simular "* ]] && SIMULAR=1
+requiere_root
+cargar_versiones
+leer_config
 
-PICOCLAW_URL="https://github.com/sipeed/picoclaw/releases/download/v0.2.4/picoclaw_aarch64.deb"
+titulo "Sistema y Tailscale"
+ejecutar apt-get update -q
+ejecutar env DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -q
+ok "Paquetes al día ($(tailscale version 2>/dev/null | head -1))"
 
-echo "Iniciando actualización del sistema..."
+case "$BLOQUEADOR" in
+    adguard)
+        actual="$(/opt/AdGuardHome/AdGuardHome --version 2>/dev/null | grep -o 'v[0-9.]*' | head -1)"
+        if [[ "$actual" != "$ADGUARD_VERSION" ]]; then
+            info "AdGuard Home $actual -> $ADGUARD_VERSION"
+            bash "$DIR_REPO/scripts/bloqueador.sh" instalar adguard
+        else
+            ok "AdGuard Home $actual ya es la versión fijada"
+        fi ;;
+    pihole)
+        titulo "Pi-hole"
+        ejecutar pihole -up ;;
+esac
 
-# 1. Actualizar paquetes del sistema y Tailscale
-echo ""
-echo "[ 1/2 ] Actualizando Tailscale..."
-sudo apt update -q
-if sudo apt upgrade tailscale -y; then
-    echo "Tailscale actualizado correctamente."
-    VERSION=$(tailscale version 2>/dev/null | head -1)
-    echo "Versión activa: $VERSION"
-    sudo systemctl restart tailscaled
-    echo "Servicio tailscaled reiniciado."
-else
-    echo "Advertencia: no se pudo actualizar Tailscale desde apt."
+if [[ "${PICOCLAW:-no}" == "si" ]]; then
+    actual="$(dpkg-query -W -f='${Version}' picoclaw 2>/dev/null || true)"
+    if [[ "v${actual#v}" != "$PICOCLAW_VERSION" ]]; then
+        info "PicoClaw ${actual:-?} -> $PICOCLAW_VERSION"
+        bash "$DIR_REPO/scripts/picoclaw.sh" instalar
+        bash "$DIR_REPO/scripts/picoclaw.sh" endurecer
+    else
+        ok "PicoClaw $PICOCLAW_VERSION ya es la versión fijada"
+    fi
 fi
 
-# 2. Actualizar PicoClaw
-echo ""
-echo "[ 2/2 ] Actualizando PicoClaw..."
+# Copia los scripts de comprobación a su sitio por si han cambiado en el repositorio.
+for f in alertas.sh status.sh; do
+    ejecutar install -m 0755 "$DIR_REPO/scripts/$f" "$(r /usr/local/lib/exitnode/scripts/$f)"
+done
+ejecutar install -m 0644 "$DIR_REPO/scripts/lib/comun.sh" "$(r /usr/local/lib/exitnode/scripts/lib/comun.sh)"
 
-TMP_DEB=$(mktemp --suffix=.deb)
-
-if command -v wget &>/dev/null; then
-    wget -q "$PICOCLAW_URL" -O "$TMP_DEB"
-elif command -v curl &>/dev/null; then
-    curl -fsSL "$PICOCLAW_URL" -o "$TMP_DEB"
-else
-    echo "Error: se necesita wget o curl para descargar PicoClaw."
-    rm -f "$TMP_DEB"
-    exit 1
-fi
-
-if [ -s "$TMP_DEB" ]; then
-    sudo systemctl stop picoclaw.service 2>/dev/null
-    sudo dpkg -i "$TMP_DEB"
-    rm -f "$TMP_DEB"
-    sudo systemctl start picoclaw.service
-    echo "PicoClaw actualizado e iniciado correctamente."
-else
-    echo "Error: la descarga de PicoClaw falló o el archivo está vacío."
-    rm -f "$TMP_DEB"
-    exit 1
-fi
-
-echo ""
-echo "Actualización completada."
-echo "Ejecuta 'bash scripts/status.sh' para verificar el estado del sistema."
+bash "$DIR_REPO/scripts/status.sh" || true

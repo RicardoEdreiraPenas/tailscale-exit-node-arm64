@@ -1,59 +1,41 @@
-#!/bin/bash
+#!/usr/bin/env bash
+# Deshace lo que instala este proyecto. Pregunta antes de quitar Tailscale y el cortafuegos.
+#
+# Uso: sudo bash scripts/uninstall.sh
 
-# ==============================================================================
-# Script de Desinstalación Completa
-# Elimina PicoClaw, su servicio y la configuración de IP Forwarding
-# ==============================================================================
+source "$(dirname "${BASH_SOURCE[0]}")/lib/comun.sh"
+[[ " ${*} " == *" --simular "* ]] && SIMULAR=1
+requiere_root
+leer_config
 
-echo "Iniciando desinstalación..."
+titulo "Desinstalación"
 
-# 1. Detener y deshabilitar el servicio PicoClaw
-if systemctl is-active --quiet picoclaw.service; then
-    echo "Deteniendo servicio PicoClaw..."
-    sudo systemctl stop picoclaw.service
+[[ "${PICOCLAW:-no}" == "si" || -f "$(r /etc/systemd/system/picoclaw.service)" ]] && bash "$DIR_REPO/scripts/picoclaw.sh" desinstalar
+[[ "$BLOQUEADOR" != "ninguno" ]] && bash "$DIR_REPO/scripts/bloqueador.sh" desinstalar
+
+ejecutar systemctl disable --now exitnode-alertas.timer exitnode-gro.service 2>/dev/null || true
+ejecutar rm -f "$(r /etc/systemd/system/exitnode-alertas.service)" "$(r /etc/systemd/system/exitnode-alertas.timer)" \
+               "$(r /etc/systemd/system/exitnode-gro.service)"
+ejecutar rm -rf "$(r /usr/local/lib/exitnode)"
+ejecutar systemctl daemon-reload
+ok "Servicios del proyecto retirados"
+
+ejecutar rm -f "$(r /etc/sysctl.d/99-exitnode.conf)" "$(r /etc/apt/apt.conf.d/52exitnode-tailscale)" \
+               "$(r /etc/ssh/sshd_config.d/10-exitnode.conf)"
+# Recarga la configuración del sistema en lugar de forzar valores: si otra cosa necesita el reenvío, lo conserva.
+ejecutar sysctl -q --system
+ok "Reenvío de paquetes devuelto a la configuración del sistema"
+ejecutar systemctl reload ssh 2>/dev/null || true
+
+if command -v ufw >/dev/null 2>&1 && confirmar "¿Desactivar el cortafuegos (ufw)?" n; then
+    ejecutar ufw --force disable
 fi
 
-if systemctl is-enabled --quiet picoclaw.service 2>/dev/null; then
-    echo "Deshabilitando servicio PicoClaw..."
-    sudo systemctl disable picoclaw.service
+if command -v tailscale >/dev/null 2>&1 && confirmar "¿Desinstalar también Tailscale?" n; then
+    ejecutar tailscale down || true
+    ejecutar apt-get remove --purge -y tailscale
+    ejecutar rm -f "$(r /etc/apt/sources.list.d/tailscale.list)" "$(r /usr/share/keyrings/tailscale-archive-keyring.gpg)"
 fi
 
-# 2. Eliminar archivos del servicio y binario
-echo "Eliminando archivos instalados..."
-
-[ -f /etc/systemd/system/picoclaw.service ] && sudo rm /etc/systemd/system/picoclaw.service
-# Desinstalar paquete dpkg si está registrado, o eliminar el binario directamente
-if dpkg -s picoclaw &>/dev/null 2>&1; then
-    sudo dpkg -r picoclaw
-elif [ -f /usr/bin/picoclaw ]; then
-    sudo rm /usr/bin/picoclaw
-fi
-sudo rm -f /var/lib/picoclaw_last_hash
-
-sudo systemctl daemon-reload
-
-# 3. Eliminar usuario dedicado si existe
-if id "picoclaw" &>/dev/null; then
-    echo "Eliminando usuario 'picoclaw'..."
-    sudo userdel picoclaw
-fi
-
-# 4. Revertir IP Forwarding
-echo "Revirtiendo configuración de IP Forwarding..."
-[ -f /etc/sysctl.d/99-tailscale.conf ] && sudo rm /etc/sysctl.d/99-tailscale.conf
-sudo sysctl -w net.ipv4.ip_forward=0
-sudo sysctl -w net.ipv6.conf.all.forwarding=0
-
-# 5. Preguntar si desea desinstalar Tailscale
-read -r -p "¿Deseas desinstalar también Tailscale? [s/N] " respuesta
-if [[ "$respuesta" =~ ^[sS]$ ]]; then
-    echo "Desinstalando Tailscale..."
-    sudo apt remove --purge tailscale -y
-    sudo rm -f /etc/apt/sources.list.d/tailscale.list
-    sudo apt autoremove -y
-    echo "Tailscale desinstalado."
-else
-    echo "Tailscale conservado."
-fi
-
-echo "Desinstalación completada."
+ejecutar rm -rf "$(r "$DIR_CONF")"
+ok "Desinstalación completada"

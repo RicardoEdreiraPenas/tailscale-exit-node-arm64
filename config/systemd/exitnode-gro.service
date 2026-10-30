@@ -1,0 +1,14 @@
+[Unit]
+Description=Exit node: UDP GRO forwarding en la interfaz de salida
+Documentation=https://tailscale.com/kb/1320/performance-best-practices
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# El guion inicial hace que un kernel antiguo (sin soporte) no marque el servicio como fallido.
+ExecStart=-/usr/sbin/ethtool -K @WAN_IF@ rx-udp-gro-forwarding on rx-gro-list off
+
+[Install]
+WantedBy=multi-user.target
