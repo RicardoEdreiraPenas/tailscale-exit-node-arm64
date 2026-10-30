@@ -1,0 +1,148 @@
+{
+  "condiciones": {
+    "lista_bloqueo_dominios": 76736,
+    "retardo_origen_ms": 20,
+    "cpu_limitada_a_nucleos": 1,
+    "dominios_prueba_anuncios": 131,
+    "dominios_normales": 93
+  },
+  "adguard": {
+    "bloqueo_lista_comun": "2000/2000",
+    "bloqueo_prueba_anuncios": "89/131",
+    "falsos_positivos": [],
+    "latencia_cache_ms": {
+      "n": 930,
+      "media": 0.23,
+      "p50": 0.18,
+      "p95": 0.46,
+      "p99": 1.39,
+      "max": 2.27,
+      "errores_o_perdidas": 0
+    },
+    "latencia_consulta_nueva_ms": {
+      "n": 1500,
+      "media": 21.0,
+      "p50": 20.95,
+      "p95": 21.49,
+      "p99": 22.28,
+      "max": 24.64,
+      "errores_o_perdidas": 0
+    },
+    "latencia_bloqueado_ms": {
+      "n": 1000,
+      "media": 0.23,
+      "p50": 0.2,
+      "p95": 0.4,
+      "p99": 1.34,
+      "max": 2.46,
+      "errores_o_perdidas": 0
+    },
+    "carga_cache": {
+      "qps": 17597.769029,
+      "latencia_media_ms": 14.67,
+      "perdidas": 732,
+      "codigos_respuesta": "NOERROR 264164 (100.00%)"
+    },
+    "carga_bloqueados": {
+      "qps": 18771.636382,
+      "latencia_media_ms": 13.93,
+      "perdidas": 732,
+      "codigos_respuesta": "NOERROR 281806 (100.00%)"
+    },
+    "carga_consultas_nuevas": {
+      "qps": 8673.047796,
+      "latencia_media_ms": 47.86,
+      "perdidas": 252,
+      "codigos_respuesta": "NOERROR 130591 (100.00%)"
+    },
+    "memoria_rss_mb": 145.0,
+    "cpu_usada_s": 44.7
+  },
+  "pihole": {
+    "bloqueo_lista_comun": "2000/2000",
+    "bloqueo_prueba_anuncios": "89/131",
+    "falsos_positivos": [],
+    "latencia_cache_ms": {
+      "n": 930,
+      "media": 0.23,
+      "p50": 0.22,
+      "p95": 0.3,
+      "p99": 0.47,
+      "max": 1.69,
+      "errores_o_perdidas": 0
+    },
+    "latencia_consulta_nueva_ms": {
+      "n": 1500,
+      "media": 21.2,
+      "p50": 21.11,
+      "p95": 21.82,
+      "p99": 25.04,
+      "max": 30.06,
+      "errores_o_perdidas": 0
+    },
+    "latencia_bloqueado_ms": {
+      "n": 1000,
+      "media": 0.24,
+      "p50": 0.23,
+      "p95": 0.32,
+      "p99": 0.45,
+      "max": 1.74,
+      "errores_o_perdidas": 0
+    },
+    "carga_cache": {
+      "qps": 27251.978737,
+      "latencia_media_ms": 7.03,
+      "perdidas": 921,
+      "codigos_respuesta": "NOERROR 409113 (100.00%)"
+    },
+    "carga_bloqueados": {
+      "qps": 29782.861669,
+      "latencia_media_ms": 6.45,
+      "perdidas": 920,
+      "codigos_respuesta": "NOERROR 446841 (100.00%)"
+    },
+    "carga_consultas_nuevas": {
+      "qps": 2018.245382,
+      "latencia_media_ms": 108.39,
+      "perdidas": 898,
+      "codigos_respuesta": "NOERROR 27676 (90.65%), REFUSED 2856 (9.35%)"
+    },
+    "memoria_rss_mb": 277.0,
+    "cpu_usada_s": 52.2
+  },
+  "sin bloqueador": {
+    "latencia_cache_ms": {
+      "n": 930,
+      "media": 20.53,
+      "p50": 20.51,
+      "p95": 20.71,
+      "p99": 21.22,
+      "max": 21.8,
+      "errores_o_perdidas": 0
+    },
+    "latencia_consulta_nueva_ms": {
+      "n": 1500,
+      "media": 20.63,
+      "p50": 20.54,
+      "p95": 21.0,
+      "p99": 22.89,
+      "max": 25.21,
+      "errores_o_perdidas": 0
+    },
+    "carga_cache": {
+      "qps": 17278.941113,
+      "latencia_media_ms": 21.1,
+      "perdidas": 402,
+      "codigos_respuesta": "NOERROR 259527 (100.00%)"
+    },
+    "carga_bloqueados": null,
+    "carga_consultas_nuevas": {
+      "qps": 18305.600732,
+      "latencia_media_ms": 21.21,
+      "perdidas": 367,
+      "codigos_respuesta": "NOERROR 274940 (100.00%)"
+    },
+    "memoria_rss_mb": 22.2,
+    "cpu_usada_s": 11.0
+  }
+}

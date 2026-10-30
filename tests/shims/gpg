@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+printf 'gpg %s\n' "$*" >> "${REGISTRO:?}"
+echo "pub:-:255:22:458CA832957F5868:1600000000:::-:::scESC::::::23::0:"
+echo "fpr:::::::::${FALSA_HUELLA:-2596A99EAAB33821893C0A79458CA832957F5868}:"

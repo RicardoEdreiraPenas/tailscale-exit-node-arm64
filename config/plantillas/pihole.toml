@@ -1,0 +1,22 @@
+# Configuración inicial de Pi-hole v6 creada por scripts/bloqueador.sh.
+# Solo se fijan los valores que cambian respecto a los de fábrica; Pi-hole
+# completa el resto al arrancar y reescribe este fichero.
+
+[dns]
+  # Quad9 (bloquea dominios maliciosos) y Cloudflare como respaldo.
+  upstreams = ["9.9.9.9", "149.112.112.112", "1.1.1.1"]
+  # Escucha en todas las interfaces: el cortafuegos limita el acceso a la red
+  # local y a Tailscale. Con "LOCAL" rechazaría a los clientes 100.x de Tailscale.
+  listeningMode = "ALL"
+  dnssec = true
+  [dns.cache]
+    size = 20000
+    # Respuesta optimista: devuelve lo que ya conoce aunque haya caducado y lo refresca después.
+    optimizer = 3600
+
+[webserver]
+  # Panel en el 8080 para no chocar con otros servicios; el cortafuegos solo lo abre por Tailscale.
+  port = "8080o,[::]:8080o"
+
+[misc]
+  privacylevel = 0

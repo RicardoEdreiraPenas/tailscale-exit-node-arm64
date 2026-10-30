@@ -19,3 +19,6 @@ Thumbs.db
 
 # Archivos de configuración con credenciales (picoclaw onboard)
 config.json
+
+# Python
+__pycache__/

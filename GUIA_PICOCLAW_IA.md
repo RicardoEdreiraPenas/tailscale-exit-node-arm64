@@ -1,142 +1,89 @@
-# Guía de Configuración: PicoClaw + IA (Asistente vía Telegram)
+# Asistente de estado por Telegram con PicoClaw (opcional)
 
-Guía para configurar PicoClaw como asistente de monitorización con IA accesible desde Telegram.
+PicoClaw es un agente de IA que corre en la placa y responde por Telegram. En este proyecto se
+usa para preguntar desde el móvil cómo está el exit node: si Tailscale está conectado, la
+temperatura, la memoria o si el bloqueador funciona.
 
----
+## Antes de nada: por qué el asistente no ejecuta comandos
 
-## ¿Qué es PicoClaw?
+PicoClaw puede ejecutar comandos en la máquina cuando la IA lo decide. Esa herramienta tiene
+una vulnerabilidad de inyección de comandos publicada y sin parche (CVE-2026-36045), y los
+propios desarrolladores avisan de que no es para producción antes de la versión 1.0. En un
+equipo que está dentro de tu red de casa, eso es demasiado riesgo.
 
-PicoClaw es una plataforma de agente IA que corre en la Raspberry Pi como servicio systemd. Permite interactuar con la IA desde Telegram para consultar el estado del sistema, ejecutar comandos y monitorizar el túnel Tailscale.
+Por eso aquí el asistente:
 
----
+- **No puede ejecutar comandos.** Lee un informe (`estado.txt`) que la placa regenera cada minuto.
+- **Solo responde a tu ID de Telegram.** Si la lista de usuarios permitidos está vacía,
+  PicoClaw acepta mensajes de cualquiera; el script se niega a arrancarlo así.
+- **Corre con su propio usuario sin privilegios** y aislado por systemd: solo puede escribir en
+  su carpeta, no ve tu carpeta personal ni puede ganar privilegios.
+- **No navega por internet ni instala habilidades**, para que nadie pueda colarle instrucciones
+  a través de una web.
 
 ## Requisitos
 
-- PicoClaw v0.2.4 instalado (lo hace automáticamente `scripts/install.sh`)
-- Un bot de Telegram creado con **@BotFather**
-- Una API key de Google AI Studio (gratuita)
+- Bot de Telegram: habla con **@BotFather**, escribe `/newbot` y guarda el token.
+- Tu ID numérico de Telegram: escribe a **@userinfobot**.
+- Una API key de un proveedor de IA. Google AI Studio (https://aistudio.google.com) tiene un
+  nivel gratuito con Gemini.
 
----
-
-## Parte 1 — Crear el bot de Telegram
-
-1. Abre Telegram y busca **@BotFather**
-2. Escribe `/newbot` y sigue las instrucciones
-3. Guarda el **TOKEN** que te devuelve (formato: `1234567890:ABCdef...`)
-4. Busca **@userinfobot** en Telegram y escríbele — te dará tu **CHAT_ID** numérico
-
----
-
-## Parte 2 — Obtener API key de Google AI Studio
-
-1. Ve a **https://aistudio.google.com**
-2. Haz clic en **Get API Key** → **Create API key**
-3. Copia la clave (empieza por `AIza...`)
-
-> Es gratuita y no requiere tarjeta de crédito.
-
----
-
-## Parte 3 — Configurar PicoClaw (primera vez)
-
-Conéctate a la Raspberry Pi por SSH y ejecuta:
+## Instalación
 
 ```bash
-picoclaw onboard
+sudo bash scripts/picoclaw.sh instalar
 ```
 
-Durante el asistente interactivo:
-- Selecciona **Telegram** como canal
-- Introduce el **TOKEN** del bot
-- Introduce tu **CHAT_ID**
-- Selecciona **Gemini** como proveedor de IA
-- Introduce tu **API key de Google**
+El script:
 
----
+1. Descarga PicoClaw comprobando su suma SHA-256 y crea el usuario `picoclaw`.
+2. Genera la configuración por defecto con ese usuario.
+3. Te pide el token del bot, tu ID numérico de Telegram, la API key y el modelo
+   (por defecto `gemini-2.5-flash`). Los secretos no se escriben en la pantalla ni pasan
+   por la línea de comandos.
+4. Aplica la configuración segura y arranca el servicio. Si falta algo, lo explica y no arranca.
 
-## Parte 4 — Actualizar el modelo de IA
-
-PicoClaw viene configurado con modelos que pueden quedar obsoletos. El modelo gratuito recomendado actualmente es **Gemini 2.5 Flash**.
-
-### Verificar qué modelo está configurado
+Para cambiar el token, la clave o el modelo más adelante:
 
 ```bash
-jq '.agents.defaults.model_name' ~/.picoclaw/config.json
-jq '.model_list[] | select(.model_name == "gemini-2.0-flash") | .model' ~/.picoclaw/config.json
+sudo bash scripts/picoclaw.sh configurar
 ```
 
-### Actualizar al modelo actual (gemini-2.5-flash)
+> Ten en cuenta que el informe de estado (nombre de la placa, IP de Tailscale, estado de los
+> servicios) se envía al proveedor de IA cada vez que preguntas.
+
+## Uso
+
+Escribe al bot, por ejemplo:
+
+- ¿Cómo está el sistema?
+- ¿Está conectado Tailscale?
+- ¿Qué temperatura tiene la placa?
+- ¿Funciona el bloqueador de anuncios?
+
+Si le pides que haga algo (reiniciar, actualizar), te dirá qué comando ejecutar por SSH.
+
+## Si de verdad quieres que ejecute comandos
 
 ```bash
-jq '(.model_list[] | select(.model_name == "gemini-2.0-flash")) |= . + {"model": "gemini/gemini-2.5-flash"}' ~/.picoclaw/config.json > /tmp/cfg.json && mv /tmp/cfg.json ~/.picoclaw/config.json
-
-jq '.agents.defaults.model_name = "gemini-2.0-flash"' ~/.picoclaw/config.json > /tmp/cfg.json && mv /tmp/cfg.json ~/.picoclaw/config.json
+sudo bash scripts/picoclaw.sh endurecer --permitir-comandos
 ```
 
-### Añadir la API key de Gemini
+Activa la herramienta de comandos con los filtros de PicoClaw, pero el asistente sigue sin
+`sudo`, aislado en su carpeta. Hazlo solo sabiendo que la vulnerabilidad sigue abierta.
+
+## Problemas frecuentes
+
+| Problema | Solución |
+|---|---|
+| Dice que falta `allow_from` | `sudo bash scripts/picoclaw.sh configurar` y pon tu ID numérico de Telegram |
+| El bot no responde | `sudo systemctl status picoclaw` y `sudo journalctl -u picoclaw -n 50` |
+| `401 Invalid API Key` | Clave mal copiada: `sudo bash scripts/picoclaw.sh configurar` |
+| `404 model no longer available` | El modelo se ha retirado: elige otro con `configurar` |
+| El asistente dice que el informe es antiguo | `sudo systemctl status picoclaw-estado.timer` |
+
+## Desinstalar
 
 ```bash
-jq '(.model_list[] | select(.model_name == "gemini-2.0-flash")) |= . + {"api_key": "TU_CLAVE_AQUI"}' ~/.picoclaw/config.json > /tmp/cfg.json && mv /tmp/cfg.json ~/.picoclaw/config.json
+sudo bash scripts/picoclaw.sh desinstalar
 ```
-
-> **No compartas la API key en chats ni en el repositorio.**
-
-### Reiniciar el servicio
-
-```bash
-sudo systemctl restart picoclaw.service
-sudo systemctl status picoclaw.service
-```
-
----
-
-## Parte 5 — Probar el modelo antes de reiniciar
-
-Antes de reiniciar el servicio, verifica que el modelo responde:
-
-```bash
-curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$(jq -r '.model_list[] | select(.model_name == "gemini-2.0-flash") | .api_key' ~/.picoclaw/config.json)" \
-  -H "Content-Type: application/json" \
-  -d '{"contents":[{"parts":[{"text":"di hola"}]}]}'
-```
-
-Si la respuesta incluye `"text": "¡Hola!"` (o similar), el modelo funciona correctamente.
-
----
-
-## Parte 6 — Usar el asistente desde Telegram
-
-Una vez configurado, abre Telegram y escribe al bot. Ejemplos de consultas:
-
-- `¿Cuál es el estado del sistema?`
-- `Comprueba si Tailscale está funcionando`
-- `¿Cuánta RAM queda libre?`
-- `¿Cuál es la temperatura de la CPU?`
-- `¿Cuánto espacio libre hay en disco?`
-
-El bot ejecutará los comandos necesarios en la Raspberry Pi y te responderá con los resultados.
-
----
-
-## Solución de problemas
-
-| Error | Causa | Solución |
-|---|---|---|
-| `401 Invalid API Key` | Clave mal copiada o duplicada | Verifica con `jq '.model_list[] | select(.model_name == "gemini-2.0-flash") | .api_key'` |
-| `404 model no longer available` | Modelo retirado por Google | Actualiza a `gemini/gemini-2.5-flash` siguiendo la Parte 4 |
-| `400 credit balance too low` | Sin crédito en Anthropic | Usa Gemini (gratuito) en lugar de Claude |
-| `404 No endpoints found for free model` | Modelo gratuito de OpenRouter sin soporte de tools | Usa Gemini en lugar de OpenRouter |
-| El bot no responde | Servicio caído | `sudo systemctl restart picoclaw.service` |
-| Sigue usando modelo antiguo tras reinicio | El cambio no se guardó | Verifica con `jq '.agents.defaults.model_name'` antes de reiniciar |
-
----
-
-## Modelos compatibles y gratuitos (Abril 2026)
-
-| Modelo | Proveedor | Gratuito | Notas |
-|---|---|---|---|
-| `gemini-2.5-flash` | Google AI Studio | ✅ Sí | Recomendado |
-| `gemini-2.5-pro` | Google AI Studio | ✅ Sí | Más potente, cuota menor |
-| `gemini-2.0-flash` | Google AI Studio | ❌ Retirado | No disponible para nuevos usuarios |
-| `claude-sonnet-4.6` | Anthropic | ❌ No | Requiere crédito de pago |
-| Modelos OpenRouter free | OpenRouter | ⚠️ Parcial | No soportan herramientas (tools) |
